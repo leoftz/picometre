@@ -38,6 +38,8 @@ npm run dev                        # http://localhost:3000
 | `npm test` | Tests unitaires (Vitest) |
 | `npm run test:e2e` | Tests de bout en bout (Playwright, local uniquement) |
 | `npm run check` | Lint + typage + tests unitaires |
+| `npm run db:test` | Tests RLS (pgTAP) sur la base locale |
+| `npm run db:types` | Régénère `lib/supabase/database.types.ts` après une migration |
 | `npm run icons` | Régénère les icônes PWA depuis `docs/brand/picometre-icone.svg` |
 
 ## Règles du dépôt
