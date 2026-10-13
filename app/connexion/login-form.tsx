@@ -6,7 +6,7 @@ import { type MagicLinkState, sendMagicLink, signInWithGoogle } from "./actions"
 
 const initial: MagicLinkState = { status: "idle" };
 
-export function LoginForm() {
+export function LoginForm({ magicLink }: { magicLink: boolean }) {
   const [state, formAction, pending] = useActionState(sendMagicLink, initial);
 
   if (state.status === "sent") {
@@ -20,6 +20,15 @@ export function LoginForm() {
       </div>
     );
   }
+
+  const google = (
+    <form action={signInWithGoogle}>
+      <button type="submit" className={buttonClass(magicLink ? "secondary" : "primary")}>
+        Continuer avec Google
+      </button>
+    </form>
+  );
+  if (!magicLink) return google;
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,11 +53,7 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-on-surface-muted">ou</p>
 
-      <form action={signInWithGoogle}>
-        <button type="submit" className={buttonClass("secondary")}>
-          Continuer avec Google
-        </button>
-      </form>
+      {google}
     </div>
   );
 }
