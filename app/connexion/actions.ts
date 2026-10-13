@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { emailSchema } from "@/lib/account/schemas";
+import { magicLinkEnabled } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 export type MagicLinkState = { status: "idle" | "sent" | "error"; message?: string; email?: string };
@@ -15,6 +16,7 @@ async function origin(): Promise<string> {
 }
 
 export async function sendMagicLink(_previous: MagicLinkState, formData: FormData): Promise<MagicLinkState> {
+  if (!magicLinkEnabled) return { status: "error", message: "Connecte-toi avec Google." };
   const parsed = emailSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { status: "error", message: parsed.error.issues[0]?.message };
 
