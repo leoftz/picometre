@@ -13,7 +13,7 @@ export interface LegalIdentity {
 export const LEGAL: { controller: LegalIdentity | null; version: string } = {
   controller: {
     name: "Léo Fritz",
-    address: "14 rue des Pavillions, 92800 Puteaux, France",
+    address: "14 rue des Pavillons, 92800 Puteaux, France",
     email: "leo.fritz.76@gmail.com",
   },
   version: "13 octobre 2026",
