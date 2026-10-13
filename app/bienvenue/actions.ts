@@ -1,9 +1,12 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CONSENT_VERSIONS } from "@/lib/account/consents";
 import { characterSchema, fieldErrors } from "@/lib/account/schemas";
 import { requireUser } from "@/lib/auth/dal";
+import { consumeInvite } from "@/lib/friends/consume-invite";
+import { INVITE_COOKIE, isInviteToken } from "@/lib/friends/invite-cookie";
 import { createClient } from "@/lib/supabase/server";
 
 export type FormState = { errors: Record<string, string>; values?: Record<string, string> };
@@ -55,5 +58,12 @@ export async function createCharacter(_previous: FormState, formData: FormData):
     .upsert({ sex, height_cm: heightCm, weight_kg: weightKg, habit });
   if (healthError) return { errors: { form: "L'enregistrement a échoué. Réessaie." }, values };
 
+  // A friend link opened before signing up is accepted now that the character exists.
+  const cookieStore = await cookies();
+  const invite = cookieStore.get(INVITE_COOKIE)?.value;
+  if (isInviteToken(invite)) {
+    cookieStore.delete(INVITE_COOKIE);
+    redirect(await consumeInvite(invite));
+  }
   redirect("/accueil");
 }

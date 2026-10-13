@@ -16,7 +16,7 @@ export function LoginForm() {
         <p>
           On a envoyé un lien de connexion à <strong>{state.email}</strong>. Il est valable une heure.
         </p>
-        <p className="text-sm text-on-surface-muted">Ouvre-le sur ce téléphone pour rester connecté.</p>
+        <p className="text-sm text-on-surface-muted">Ouvre-le sur ce téléphone pour garder ta session ouverte.</p>
       </div>
     );
   }

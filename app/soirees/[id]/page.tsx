@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Avatar } from "@/components/avatar";
 import { Loading, PageShell, buttonClass } from "@/components/ui";
+import type { AvatarId } from "@/lib/account/avatars";
 import { drinkType, glassSize } from "@/lib/bank/catalog";
 import { enforceOnboarding } from "@/lib/auth/dal";
 import { formatAbv, formatGrams, formatPartyDate, formatStandardDrinks } from "@/lib/party/format";
 import { createClient } from "@/lib/supabase/server";
-import { deleteParty, endParty, removePlannedDrink } from "../actions";
+import { answerInvitation, deleteParty, endParty, inviteFriends, removeParticipant, removePlannedDrink } from "../actions";
 import { AddCocktailForm } from "./add-cocktail-form";
 import { AddDrinkForm } from "./add-drink-form";
 import { ParticipationForm } from "./participation-form";
@@ -34,7 +36,7 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
   if (!UUID.test(id)) notFound();
 
   const supabase = await createClient();
-  const [{ data: party }, { data: me }, { data: drinks }] = await Promise.all([
+  const [{ data: party }, { data: me }, { data: drinks }, { data: participants }, { data: cards }, { data: friendships }] = await Promise.all([
     supabase.from("parties").select("id, title, starts_at, location, host_id, status").eq("id", id).maybeSingle(),
     supabase.from("participant_private").select("objective, meal_kind, meal_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
     supabase
@@ -42,10 +44,22 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
       .select("id, kind, drink_type, abv, default_glass, name, ethanol_g, pour, added_by, cocktail_ingredients(drink_type, volume_ml, abv)")
       .eq("party_id", id)
       .order("created_at"),
+    supabase.from("party_participants").select("user_id, role, invite_status").eq("party_id", id).order("role"),
+    supabase.from("profile_cards").select("id, pseudo, avatar"),
+    supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted"),
   ]);
   // RLS hides parties the user is not part of: same answer as a party that does not exist.
   if (!party || !me) notFound();
   const isHost = party.host_id === user.id;
+  const card = (userId: string) => cards?.find((c) => c.id === userId);
+  const myInvite = participants?.find((p) => p.user_id === user.id)?.invite_status;
+  const inParty = new Set(participants?.map((p) => p.user_id));
+  const invitable = (friendships ?? [])
+    .map((f) => (f.requester_id === user.id ? f.addressee_id : f.requester_id))
+    .filter((friendId) => !inParty.has(friendId))
+    .map((friendId) => card(friendId))
+    .filter((c) => c !== undefined);
+  const STATUS = { invited: "Invitation envoyée", accepted: "Sera de la soirée", declined: "Ne viendra pas" } as const;
 
   return (
     <div className="flex flex-col gap-10">
@@ -58,7 +72,19 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
         </p>
       </header>
 
-      {party.status === "ended" ? (
+      {myInvite === "invited" ? (
+        <section role="status" className="flex flex-col gap-3 rounded-carte border-2 border-citron p-4">
+          <p className="font-semibold">{card(party.host_id)?.pseudo ?? "Quelqu'un"} t&apos;invite à cette soirée.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <form action={answerInvitation.bind(null, party.id, true)}>
+              <button type="submit" className={buttonClass("primary")}>Accepter</button>
+            </form>
+            <form action={answerInvitation.bind(null, party.id, false)}>
+              <button type="submit" className={buttonClass("secondary")}>Décliner</button>
+            </form>
+          </div>
+        </section>
+      ) : party.status === "ended" ? (
         <div className="flex flex-col gap-3">
           <p role="status" className="font-semibold">Soirée terminée.</p>
           <Link href={`/soirees/${party.id}/bilan`} className={buttonClass("primary")}>
@@ -83,6 +109,52 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
           mealAt={me.meal_at}
           defaultMealAt={party.starts_at}
         />
+      </section>
+
+      <section aria-labelledby="participants" className="flex flex-col gap-4">
+        <h2 id="participants" className="font-display text-2xl font-bold">Participants</h2>
+        <ul className="flex flex-col gap-2">
+          {participants?.map((p) => (
+            <li key={p.user_id} className="flex items-center justify-between gap-3 rounded-bouton bg-white/5 px-4 py-3">
+              <span className="flex items-center gap-3">
+                {card(p.user_id) ? <Avatar id={card(p.user_id)!.avatar as AvatarId} size={36} /> : null}
+                <span>
+                  <span className="font-semibold">{card(p.user_id)?.pseudo ?? "Participant"}</span>
+                  <span className="block text-sm text-on-surface-muted">{p.role === "host" ? "Organise la soirée" : STATUS[p.invite_status]}</span>
+                </span>
+              </span>
+              {p.role === "guest" && (isHost || p.user_id === user.id) ? (
+                <form action={removeParticipant.bind(null, party.id, p.user_id)}>
+                  <button type="submit" className="text-sm underline">{p.user_id === user.id ? "Quitter" : "Retirer"}</button>
+                </form>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        {isHost && party.status !== "ended" ? (
+          invitable.length > 0 ? (
+            <details className="rounded-carte bg-white/5 p-4">
+              <summary className="cursor-pointer font-semibold">Inviter des amis</summary>
+              <form action={inviteFriends.bind(null, party.id)} className="mt-4 flex flex-col gap-3">
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="sr-only">Amis à inviter</legend>
+                  {invitable.map((friend) => (
+                    <label key={friend.id} className="flex items-center gap-3">
+                      <input type="checkbox" name="friend" value={friend.id} className="size-5 accent-corail" />
+                      <Avatar id={friend.avatar as AvatarId} size={32} />
+                      {friend.pseudo}
+                    </label>
+                  ))}
+                </fieldset>
+                <button type="submit" className={buttonClass("secondary")}>Envoyer les invitations</button>
+              </form>
+            </details>
+          ) : (
+            <p className="text-sm text-on-surface-muted">
+              Pour inviter du monde, ajoute d&apos;abord tes amis depuis <Link href="/amis" className="underline">Mes amis</Link>.
+            </p>
+          )
+        ) : null}
       </section>
 
       <section aria-labelledby="boissons" className="flex flex-col gap-4">

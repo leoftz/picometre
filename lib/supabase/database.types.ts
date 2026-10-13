@@ -147,6 +147,58 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"friend_invites": {
+                  Row: {
+                    "created_at": string,"expires_at": string,"inviter_id": string,"token": string,"used_at": string | null,"used_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"expires_at"?: string,"inviter_id"?: string,"token"?: string,"used_at"?: string | null,"used_by"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"expires_at"?: string,"inviter_id"?: string,"token"?: string,"used_at"?: string | null,"used_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "friend_invites_inviter_id_fkey"
+      columns: ["inviter_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "friend_invites_used_by_fkey"
+      columns: ["used_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"friendships": {
+                  Row: {
+                    "addressee_id": string,"created_at": string,"id": string,"requester_id": string,"responded_at": string | null,"status": Database["public"]['Enums']["friendship_status"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "addressee_id": string,"created_at"?: string,"id"?: string,"requester_id": string,"responded_at"?: string | null,"status"?: Database["public"]['Enums']["friendship_status"]
+                  }
+                  Update: {
+                    "addressee_id"?: string,"created_at"?: string,"id"?: string,"requester_id"?: string,"responded_at"?: string | null,"status"?: Database["public"]['Enums']["friendship_status"]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "friendships_addressee_id_fkey"
+      columns: ["addressee_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "friendships_requester_id_fkey"
+      columns: ["requester_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"glass_sizes": {
                   Row: {
                     "label": string,"param_ref": string,"slug": string,"volume_ml": number
@@ -265,6 +317,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"profile_cards": {
+                  Row: {
+                    "avatar": string,"id": string,"pseudo": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "avatar": string,"id": string,"pseudo": string
+                  }
+                  Update: {
+                    "avatar"?: string,"id"?: string,"pseudo"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profile_cards_id_fkey"
+      columns: ["id"]
+isOneToOne: true
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profile_health": {
                   Row: {
                     "habit": Database["public"]['Enums']["drinking_habit"],"height_cm": number,"sex": Database["public"]['Enums']["sex"],"updated_at": string,"user_id": string,"weight_kg": number
@@ -305,12 +377,18 @@ isOneToOne: true
             [_ in never]: never
           }
           Functions: {
-            "has_active_consent":
+            "accept_friend_invite":
+{ Args: { "p_token": string }; Returns: string
+                           },
+"has_active_consent":
 { Args: { "p_kind": Database["public"]['Enums']["consent_kind"] }; Returns: boolean
+                           },
+"send_friend_request":
+{ Args: { "p_pseudo": string }; Returns: string
                            }
           }
           Enums: {
-            "consent_kind": "cgu"|"health_data"|"gauge_sharing","drink_family": "biere"|"cidre"|"vin"|"aperitif"|"spiritueux"|"liqueur"|"sans_alcool","drinking_habit": "occasionnel"|"regulier"|"frequent","invite_status": "invited"|"accepted"|"declined","meal_kind": "aucun"|"collation"|"repas","participant_role": "host"|"guest","party_objective": "desinhibe"|"zero_gdb"|"festive","party_status": "planned"|"live"|"ended","planned_drink_kind": "boisson"|"cocktail","pour_kind": "dose"|"oeil","sex": "f"|"m"|"autre"
+            "consent_kind": "cgu"|"health_data"|"gauge_sharing","drink_family": "biere"|"cidre"|"vin"|"aperitif"|"spiritueux"|"liqueur"|"sans_alcool","drinking_habit": "occasionnel"|"regulier"|"frequent","friendship_status": "pending"|"accepted"|"declined","invite_status": "invited"|"accepted"|"declined","meal_kind": "aucun"|"collation"|"repas","participant_role": "host"|"guest","party_objective": "desinhibe"|"zero_gdb"|"festive","party_status": "planned"|"live"|"ended","planned_drink_kind": "boisson"|"cocktail","pour_kind": "dose"|"oeil","sex": "f"|"m"|"autre"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -430,7 +508,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "consent_kind": ["cgu", "health_data", "gauge_sharing"],"drink_family": ["biere", "cidre", "vin", "aperitif", "spiritueux", "liqueur", "sans_alcool"],"drinking_habit": ["occasionnel", "regulier", "frequent"],"invite_status": ["invited", "accepted", "declined"],"meal_kind": ["aucun", "collation", "repas"],"participant_role": ["host", "guest"],"party_objective": ["desinhibe", "zero_gdb", "festive"],"party_status": ["planned", "live", "ended"],"planned_drink_kind": ["boisson", "cocktail"],"pour_kind": ["dose", "oeil"],"sex": ["f", "m", "autre"]
+            "consent_kind": ["cgu", "health_data", "gauge_sharing"],"drink_family": ["biere", "cidre", "vin", "aperitif", "spiritueux", "liqueur", "sans_alcool"],"drinking_habit": ["occasionnel", "regulier", "frequent"],"friendship_status": ["pending", "accepted", "declined"],"invite_status": ["invited", "accepted", "declined"],"meal_kind": ["aucun", "collation", "repas"],"participant_role": ["host", "guest"],"party_objective": ["desinhibe", "zero_gdb", "festive"],"party_status": ["planned", "live", "ended"],"planned_drink_kind": ["boisson", "cocktail"],"pour_kind": ["dose", "oeil"],"sex": ["f", "m", "autre"]
           }
         }
 } as const

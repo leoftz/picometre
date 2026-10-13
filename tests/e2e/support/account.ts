@@ -20,8 +20,10 @@ export async function chooseAvatar(page: Page, name: string) {
   await expect(page.getByRole("radio", { name })).toBeChecked();
 }
 
-/** Signs up a fresh adult user through the real flow and lands on /accueil. */
-export async function createAccount(page: Page, pseudo = `e2e${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`) {
+export const randomPseudo = () => `e2e${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+
+/** Signs up a fresh adult user through the real flow and lands on `landing` (home by default). */
+export async function createAccount(page: Page, pseudo = randomPseudo(), landing: RegExp = /\/accueil$/) {
   await signIn(page, uniqueEmail());
   await page.getByRole("checkbox", { name: /conditions d'utilisation/ }).check();
   await page.getByRole("checkbox", { name: /estimer ma jauge/ }).check();
@@ -34,6 +36,6 @@ export async function createAccount(page: Page, pseudo = `e2e${Date.now().toStri
   await page.getByLabel("Poids (kg)").fill("62");
   await page.getByRole("radio", { name: /Occasionnel/ }).check();
   await page.getByRole("button", { name: "Créer mon personnage" }).click();
-  await expect(page).toHaveURL(/\/accueil$/);
+  await expect(page).toHaveURL(landing);
   return pseudo;
 }
