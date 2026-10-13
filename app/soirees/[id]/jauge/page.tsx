@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { SharingControl } from "@/components/sharing-control";
 import { Loading, PageShell, buttonClass } from "@/components/ui";
 import { enforceOnboarding } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
+import { GroupView, type Share } from "./group-view";
 import { type Consumption, LiveParty, type PlannedDrink } from "./live-party";
 
 export const metadata: Metadata = { title: "Ma jauge" };
@@ -28,7 +30,17 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]/jauge">, "param
   if (!UUID.test(id)) notFound();
 
   const supabase = await createClient();
-  const [{ data: party }, { data: me }, { data: health }, { data: profile }, { data: drinks }, { data: consumptions }] = await Promise.all([
+  const [
+    { data: party },
+    { data: me },
+    { data: health },
+    { data: profile },
+    { data: drinks },
+    { data: consumptions },
+    { data: participants },
+    { data: cards },
+    { data: shares },
+  ] = await Promise.all([
     supabase.from("parties").select("id, title").eq("id", id).maybeSingle(),
     supabase.from("participant_private").select("objective, meal_kind, meal_at, stop_locked_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
     supabase.from("profile_health").select("sex, height_cm, weight_kg, habit").maybeSingle(),
@@ -39,8 +51,16 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]/jauge">, "param
       .select("id, party_drink_id, label, glass_size, portion, consumed_at, ethanol_g, pour")
       .eq("party_id", id)
       .order("consumed_at"),
+    supabase.from("party_participants").select("user_id, share_gauge").eq("party_id", id).eq("invite_status", "accepted"),
+    supabase.from("profile_cards").select("id, pseudo, avatar"),
+    supabase.from("gauge_shares").select("id, user_id, level, schedule, stopped, computed_at").eq("party_id", id),
   ]);
   if (!party || !me || !health || !profile) notFound();
+  const sharing = participants?.find((p) => p.user_id === user.id)?.share_gauge ?? false;
+  const members = (participants ?? []).flatMap((p) => {
+    const card = cards?.find((c) => c.id === p.user_id);
+    return card ? [{ userId: p.user_id, pseudo: card.pseudo, avatar: card.avatar }] : [];
+  });
 
   const header = (
     <header className="flex flex-col gap-1">
@@ -72,9 +92,17 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]/jauge">, "param
           meal: { kind: me.meal_kind, at: me.meal_at },
           stopLockedAt: me.stop_locked_at,
         }}
+        sharing={sharing}
         plannedDrinks={(drinks ?? []).map((d) => ({ ...d, abv: d.abv === null ? null : Number(d.abv), ethanol_g: Number(d.ethanol_g) })) as PlannedDrink[]}
         initialConsumptions={(consumptions ?? []).map((c) => ({ ...c, ethanol_g: Number(c.ethanol_g), portion: Number(c.portion) })) as Consumption[]}
       />
+      {participants ? (
+        <section aria-labelledby="groupe" className="flex flex-col gap-4">
+          <h2 id="groupe" className="font-display text-2xl font-bold">Le groupe</h2>
+          <GroupView partyId={party.id} myId={user.id} members={members} initialShares={(shares ?? []) as unknown as Share[]} />
+          <SharingControl partyId={party.id} sharing={sharing} />
+        </section>
+      ) : null}
       <p className="text-sm text-on-surface-muted">
         La jauge estime, l&apos;éthylotest décide. Si tu as bu, tu ne conduis pas.
       </p>

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { CONSENT_VERSIONS } from "@/lib/account/consents";
 import { fieldErrors } from "@/lib/account/schemas";
 import { requireUser } from "@/lib/auth/dal";
 import { cocktailSchema, participationSchema, partySchema, plannedDrinkSchema } from "@/lib/party/schemas";
@@ -154,4 +155,27 @@ export async function removeParticipant(partyId: string, userId: string): Promis
   await supabase.from("party_participants").delete().eq("party_id", partyId).eq("user_id", userId);
   if (userId === user.id) redirect("/accueil");
   revalidatePath(`/soirees/${partyId}`);
+}
+
+// Lot 8 — sharing one's gauge level with the party is a per-party consent; revoking it erases what was
+// shared at once (database triggers on consents).
+export async function shareGauge(partyId: string): Promise<void> {
+  await requireUser();
+  const supabase = await createClient();
+  await supabase.from("consents").insert({ kind: "gauge_sharing", party_id: partyId, version: CONSENT_VERSIONS.gauge_sharing });
+  revalidatePath(`/soirees/${partyId}`);
+  revalidatePath(`/soirees/${partyId}/jauge`);
+}
+
+export async function stopSharingGauge(partyId: string): Promise<void> {
+  await requireUser();
+  const supabase = await createClient();
+  await supabase
+    .from("consents")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("kind", "gauge_sharing")
+    .eq("party_id", partyId)
+    .is("revoked_at", null);
+  revalidatePath(`/soirees/${partyId}`);
+  revalidatePath(`/soirees/${partyId}/jauge`);
 }
