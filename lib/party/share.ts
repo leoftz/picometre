@@ -13,6 +13,8 @@ export interface SharedGauge {
   level: GaugeLevel;
   schedule: ScheduleEntry[];
   stopped: boolean;
+  /** Highest level reached so far: what « Capitaine de soirée » compares (docs/parametres-scientifiques.md#P-59). */
+  peak_level: GaugeLevel;
 }
 
 /** Same limit as the database (gauge_shares guard). */
@@ -25,8 +27,12 @@ const MAX_ENTRIES = 48;
 export function shareFrom(result: SimulationResult, now: number): SharedGauge {
   const schedule: ScheduleEntry[] = [];
   let previous = result.level;
+  let peak: GaugeLevel = result.level;
   for (const point of result.curve) {
-    if (point.t <= now) continue;
+    if (point.t <= now) {
+      peak = Math.max(peak, levelOf(point.gauge)) as GaugeLevel;
+      continue;
+    }
     const level = levelOf(point.gauge);
     if (level !== previous) {
       schedule.push({ at: new Date(point.t).toISOString(), level });
@@ -37,7 +43,12 @@ export function shareFrom(result: SimulationResult, now: number): SharedGauge {
   if (previous !== 1 && result.curve.length > 0) {
     schedule.push({ at: new Date(result.curve.at(-1)!.t + 5 * 60_000).toISOString(), level: 1 });
   }
-  return { level: result.level, schedule: schedule.slice(0, MAX_ENTRIES), stopped: result.stopLocked };
+  return {
+    level: result.level,
+    schedule: schedule.slice(0, MAX_ENTRIES),
+    stopped: result.stopLocked,
+    peak_level: result.stopLocked ? 4 : peak,
+  };
 }
 
 /** The level a shared gauge shows at `now`, following its schedule. */

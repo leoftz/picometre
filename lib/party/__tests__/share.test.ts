@@ -20,7 +20,7 @@ const run = (drinks: number, now: number) =>
 describe("shareFrom", () => {
   it("carries only a level, its schedule and the Stop — never a value in g/L", () => {
     const share = shareFrom(run(5, T0 + 2 * HOUR), T0 + 2 * HOUR);
-    expect(Object.keys(share).sort()).toEqual(["level", "schedule", "stopped"]);
+    expect(Object.keys(share).sort()).toEqual(["level", "peak_level", "schedule", "stopped"]);
     for (const entry of share.schedule) expect(Object.keys(entry).sort()).toEqual(["at", "level"]);
   });
 
@@ -41,14 +41,23 @@ describe("shareFrom", () => {
     for (const point of result.curve.filter((p) => p.t >= now)) expect(levelAt(share, point.t)).toBe(levelOf(point.gauge));
   });
 
+  it("keeps the highest level reached so far, even once the gauge comes down", () => {
+    const now = T0 + 6 * HOUR;
+    const result = run(4, now);
+    const share = shareFrom(result, now);
+    expect(share.level).toBe(1);
+    expect(share.peak_level).toBe(Math.max(...result.curve.filter((p) => p.t <= now).map((p) => levelOf(p.gauge))));
+    expect(share.peak_level).toBeGreaterThan(1);
+  });
+
   it("shares the permanent Stop", () => {
     const now = T0 + 4 * HOUR;
-    expect(shareFrom(run(10, now), now).stopped).toBe(true);
+    expect(shareFrom(run(10, now), now)).toMatchObject({ stopped: true, peak_level: 4 });
     expect(shareFrom(run(2, now), now).stopped).toBe(false);
   });
 
   it("has nothing to schedule without a drink", () => {
-    expect(shareFrom(run(0, T0), T0)).toEqual({ level: 1, schedule: [], stopped: false });
+    expect(shareFrom(run(0, T0), T0)).toEqual({ level: 1, schedule: [], stopped: false, peak_level: 1 });
   });
 });
 
@@ -70,7 +79,7 @@ describe("levelAt", () => {
 
 describe("sameShare", () => {
   it("only differs when something visible changes", () => {
-    const a = { level: 2 as const, schedule: [], stopped: false };
+    const a = { level: 2 as const, schedule: [], stopped: false, peak_level: 2 as const };
     expect(sameShare(a, { ...a })).toBe(true);
     expect(sameShare(a, { ...a, level: 3 })).toBe(false);
   });

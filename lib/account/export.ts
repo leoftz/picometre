@@ -9,7 +9,7 @@ import type { SessionUser } from "@/lib/auth/dal";
  */
 export async function buildExport(user: SessionUser) {
   const supabase = await createClient();
-  const [profile, health, consents, participations, privateParts, consumptions, friendships, invites, shares] = await Promise.all([
+  const [profile, health, consents, participations, privateParts, consumptions, friendships, invites, shares, trophies] = await Promise.all([
     supabase.from("profiles").select("pseudo, avatar, birth_year, adult_confirmed_at, created_at, updated_at").maybeSingle(),
     supabase.from("profile_health").select("sex, height_cm, weight_kg, habit, updated_at").maybeSingle(),
     supabase.from("consents").select("kind, version, party_id, granted_at, revoked_at").order("granted_at"),
@@ -18,9 +18,10 @@ export async function buildExport(user: SessionUser) {
     supabase.from("consumptions").select("party_id, label, glass_size, portion, volume_ml, abv, ethanol_g, pour, consumed_at, created_at").order("consumed_at"),
     supabase.from("friendships").select("requester_id, addressee_id, status, created_at, responded_at"),
     supabase.from("friend_invites").select("created_at, expires_at, used_at"),
-    supabase.from("gauge_shares").select("party_id, level, schedule, stopped, computed_at").eq("user_id", user.id),
+    supabase.from("gauge_shares").select("party_id, level, peak_level, schedule, stopped, computed_at").eq("user_id", user.id),
+    supabase.from("trophies").select("party_id, kind, awarded_at").eq("user_id", user.id),
   ]);
-  const failed = [profile, health, consents, participations, privateParts, consumptions, friendships, invites, shares].find((result) => result.error);
+  const failed = [profile, health, consents, participations, privateParts, consumptions, friendships, invites, shares, trophies].find((result) => result.error);
   if (failed?.error) throw new Error(`Export failed: ${failed.error.message}`);
 
   return {
@@ -37,5 +38,6 @@ export async function buildExport(user: SessionUser) {
     friendships: friendships.data,
     friend_invites: invites.data,
     gauge_shares: shares.data,
+    trophies: trophies.data,
   };
 }

@@ -111,7 +111,7 @@ Toutes les tables sont en `public`, avec RLS **activée et forcée**. Les clés 
 | `cocktail_ingredients` | `id`, `party_drink_id`, `drink_type_id`, `volume_ml`, `abv` | Un cocktail est une recette d'ingrédients tirés de la banque. `ethanol_g` recalculé par trigger (P-01, P-03) |
 | `consumptions` | `id`, `party_id`, `user_id`, `party_drink_id`, `glass_size_id`, `volume_ml`, `abv`, `ethanol_g` (**figés au moment de la saisie**), `consumed_at`, `client_id` (idempotence hors ligne) | Visible par son propriétaire seulement. Volume et degré sont recopiés pour que l'historique ne change jamais |
 | `gauge_shares` | `id` (aléatoire), `party_id`, `user_id`, `level` (1 à 4), `schedule` (jsonb : `[{at, level}]`, 48 entrées max), `stopped`, `computed_at` | Publiée dans Realtime. **Aucune valeur en g/L**. L'`id` est aléatoire car Realtime diffuse les suppressions à tous les abonnés, sans RLS, avec la seule clé primaire (lot 8). Le consentement `gauge_sharing` pilote `share_gauge` ; sa révocation ou le départ de la soirée efface la ligne |
-| `trophies` | `id`, `party_id`, `user_id`, `kind` (`capitaine`/`joker_eau`/`atterrissage`), `awarded_at` | Lot 9 |
+| `trophies` | `id`, `party_id`, `user_id`, `kind` (`capitaine`/`joker_eau`/`atterrissage`), `awarded_at` | Lot 9. Unicité `(party_id, user_id, kind)`. `gauge_shares.peak_level` (niveau de pic, jamais de g/L) sert au Capitaine |
 
 ### Politiques RLS
 
@@ -130,7 +130,7 @@ Deux fonctions `security definer` (avec `search_path` fixé) servent de briques 
 | `party_drinks`, `cocktail_ingredients` | Les membres | INSERT par tout membre, en son propre nom (`added_by`). UPDATE et DELETE par l'auteur ou l'hôte (Q-12) |
 | `consumptions`, `participant_private` | **Soi-même uniquement** | Soi-même, et seulement si l'on est membre de la soirée |
 | `gauge_shares` | Soi-même, ou un membre **accepté** de la soirée **si** `share_gauge = true` pour cette ligne | INSERT et UPDATE par soi-même uniquement, seulement si `share_gauge = true`. `share_gauge` ne s'écrit pas directement : seul le consentement le change |
-| `trophies` | Les membres de la soirée | Attribution par une RPC `security definer` en fin de soirée, jamais par écriture directe |
+| `trophies` | Soi-même, ou un membre **accepté** si la personne partage sa jauge pour cette soirée | Jamais d'écriture directe. Joker eau et Capitaine : trigger à la fin de la soirée. Atterrissage parfait : RPC `claim_landing_trophy`, appelée par l'appareil (seul à faire tourner l'estimation) ; la base vérifie soirée terminée, pas de Stop, plafond de l'objectif |
 
 **Tests RLS (exigés pour chaque lot) :** des tests SQL avec pgTAP (`supabase test db`) sur la stack locale. On crée trois utilisateurs (A, B ami de A, C inconnu) et on vérifie :
 - C ne lit rien de A ;
@@ -255,8 +255,8 @@ Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes
 - **Q-1** — Vérification de l'âge : la déclaration (année de naissance et case à cocher) suffit-elle pour le MVP ? Une vérification réelle (pièce d'identité, tiers de confiance) est coûteuse.
 - **Q-2** — La charte décrit un **jeu de cartes** (gorgées, défis). Le confirmes-tu hors périmètre ? On ne garde que l'identité, la jauge, le ton et le §9.
 - **Q-3** — Au niveau 3, la charte (§9, règle 4) dit « plus de carte gorgées ». Pour l'objectif « Soirée festive », on continue d'afficher l'heure du prochain verre au niveau 3, accompagnée de « Pause fraîcheur conseillée » ? Ou bien on ne l'affiche plus du tout à partir du niveau 3 ?
-- **Q-4** — Le trophée « **Roi** du joker eau » est genré : on le renomme « **Pro** du joker eau » ou « **As** du joker eau » ?
-- **Q-5** — Le trophée « Capitaine de soirée » (jauge la plus basse) ne concerne que les participants qui partagent leur jauge. Est-ce que ça te convient ?
+- ✅ **Q-4** — « As du joker eau » : au moins 2 verres d'eau et 1 eau pour 2 verres d'alcool (P-58, hors PDF — à valider). Décision du 13/10/2026, lot 9.
+- ✅ **Q-5** — « Capitaine de soirée » : niveau de pic le plus bas parmi ceux qui partagent leur jauge, s'ils sont au moins 2 ; les ex æquo l'obtiennent tous (P-59). Les trophées restent privés sauf partage de la jauge pour la soirée. Décision du 13/10/2026, lot 9.
 - ✅ **Q-6** — Vue groupe : uniquement le niveau (libellé, couleur, icône) et un éventuel Stop, jamais de valeur en g/L ni les verres. Ordre alphabétique, jamais de classement (décision du 13/10/2026, lot 8).
 - **Q-7** — Variant ALDH2 : on affiche un message générique (N-1) sans rien collecter ?
 
