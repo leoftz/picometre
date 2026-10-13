@@ -42,6 +42,19 @@ export function GroupView({ partyId, myId, members, initialShares }: { partyId: 
   }, []);
 
   useEffect(() => {
+    // Anything published before the channel really listens would be missed: read the shares again when it
+    // is ready, and every minute as a safety net (a sleeping phone may drop its connection).
+    const resync = async () => {
+      const { data } = await supabase.from("gauge_shares").select("id, user_id, level, schedule, stopped, computed_at").eq("party_id", partyId);
+      if (!data) return;
+      // Keep whichever is newer if a live event arrived while reading.
+      setShares((live) =>
+        (data as unknown as Share[]).map((row) => {
+          const current = live.find((s) => s.user_id === row.user_id);
+          return current && current.computed_at > row.computed_at ? current : row;
+        }),
+      );
+    };
     const upsert = (row: Share) => setShares((list) => [...list.filter((s) => s.id !== row.id && s.user_id !== row.user_id), row]);
     const channel = supabase
       .channel(`gauge-shares:${partyId}`)
@@ -52,9 +65,19 @@ export function GroupView({ partyId, myId, members, initialShares }: { partyId: 
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "gauge_shares" }, (payload) => {
         const id = (payload.old as { id?: string }).id;
         setShares((list) => list.filter((s) => s.id !== id));
+      })
+      // Sent once the server really listens to the database, a little after SUBSCRIBED.
+      .on("system", {}, (payload: { extension?: string; status?: string }) => {
+        if (payload.extension === "postgres_changes" && payload.status === "ok") void resync();
       });
-    void supabase.realtime.setAuth().then(() => channel.subscribe());
+    void supabase.realtime.setAuth().then(() =>
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") void resync();
+      }),
+    );
+    const timer = setInterval(resync, 60_000);
     return () => {
+      clearInterval(timer);
       void supabase.removeChannel(channel);
     };
   }, [supabase, partyId]);
