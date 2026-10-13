@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { CONSENT_VERSIONS } from "@/lib/account/consents";
 import { fieldErrors } from "@/lib/account/schemas";
 import { requireUser } from "@/lib/auth/dal";
+import { alcoholFreeRecipe, recipe } from "@/lib/bank/recipes";
+import { libraryOpen } from "@/lib/party/library";
 import { cocktailSchema, participationSchema, partySchema, plannedDrinkSchema } from "@/lib/party/schemas";
 import { createClient } from "@/lib/supabase/server";
 
@@ -187,4 +189,36 @@ export async function claimLandingTrophy(partyId: string): Promise<boolean> {
   const { data } = await supabase.rpc("claim_landing_trophy", { p_party_id: partyId });
   if (data) revalidatePath(`/soirees/${partyId}/bilan`);
   return data === true;
+}
+
+// Lot 11 — recipe library (docs/parametres-scientifiques.md §1.2): only while preparing the party, never
+// once it is under way (a first drink entered), ended, or after a Stop. Homemade, so poured « à l'œil ».
+export async function addRecipe(partyId: string, ref: string, alcoholFree: boolean): Promise<void> {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const [{ data: party }, { data: mine }, { count }] = await Promise.all([
+    supabase.from("parties").select("status").eq("id", partyId).maybeSingle(),
+    supabase.from("participant_private").select("stop_locked_at").eq("party_id", partyId).eq("user_id", user.id).maybeSingle(),
+    supabase.from("consumptions").select("id", { count: "exact", head: true }).eq("party_id", partyId),
+  ]);
+  if (!libraryOpen({ status: party?.status, stopLockedAt: mine?.stop_locked_at ?? null, drinksEntered: count ?? 0 })) return;
+
+  const found = recipe(ref);
+  const chosen = found
+    ? alcoholFree
+      ? { name: found.alcoholFree.name, ingredients: [] }
+      : { name: found.name, ingredients: found.ingredients }
+    : alcoholFreeRecipe(ref) && { name: alcoholFreeRecipe(ref)!.name, ingredients: [] };
+  if (!chosen) return;
+
+  const id = crypto.randomUUID();
+  const { error } = await supabase.from("party_drinks").insert({ id, party_id: partyId, kind: "cocktail", name: chosen.name, pour: "oeil" });
+  if (error) return;
+  if (chosen.ingredients.length > 0) {
+    const { error: ingredientsError } = await supabase
+      .from("cocktail_ingredients")
+      .insert(chosen.ingredients.map((i) => ({ party_drink_id: id, drink_type: i.drinkType, volume_ml: i.volumeMl, abv: i.abv })));
+    if (ingredientsError) await supabase.from("party_drinks").delete().eq("id", id);
+  }
+  revalidatePath(`/soirees/${partyId}`);
 }
