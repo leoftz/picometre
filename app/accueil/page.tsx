@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { Loading, PageShell, buttonClass } from "@/components/ui";
 import type { AvatarId } from "@/lib/account/avatars";
-import { enforceOnboarding } from "@/lib/auth/dal";
+import { enforceOnboarding, requireUser } from "@/lib/auth/dal";
 import { formatPartyDate } from "@/lib/party/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,11 +24,16 @@ export default function Home() {
 async function Content() {
   await enforceOnboarding("termine");
   const supabase = await createClient();
-  const [{ data: profile }, { data: parties }] = await Promise.all([
+  const user = await requireUser();
+  const [{ data: profile }, { data: parties }, { data: mine }, { count: requests }] = await Promise.all([
     supabase.from("profiles").select("pseudo, avatar").single(),
     supabase.from("parties").select("id, title, starts_at, location, status").order("starts_at", { ascending: false }).limit(30),
+    supabase.from("party_participants").select("party_id, invite_status").eq("user_id", user.id),
+    supabase.from("friendships").select("id", { count: "exact", head: true }).eq("status", "pending").eq("addressee_id", user.id),
   ]);
-  const ongoing = parties?.filter((p) => p.status !== "ended") ?? [];
+  const invitedTo = new Set(mine?.filter((m) => m.invite_status === "invited").map((m) => m.party_id));
+  const invitations = parties?.filter((p) => invitedTo.has(p.id) && p.status !== "ended") ?? [];
+  const ongoing = parties?.filter((p) => p.status !== "ended" && !invitedTo.has(p.id)) ?? [];
   const past = parties?.filter((p) => p.status === "ended") ?? [];
 
   return (
@@ -42,6 +47,13 @@ async function Content() {
         Créer une soirée
       </Link>
 
+      {invitations.length > 0 ? (
+        <section aria-labelledby="invitations" className="flex flex-col gap-3">
+          <h2 id="invitations" className="font-display text-2xl font-bold">Invitations</h2>
+          <PartyList parties={invitations} />
+        </section>
+      ) : null}
+
       <section aria-labelledby="mes-soirees" className="flex flex-col gap-3">
         <h2 id="mes-soirees" className="font-display text-2xl font-bold">Mes soirées</h2>
         {ongoing.length === 0 ? <p className="text-on-surface-muted">Aucune soirée prévue.</p> : <PartyList parties={ongoing} />}
@@ -53,6 +65,10 @@ async function Content() {
           <PartyList parties={past} />
         </section>
       ) : null}
+
+      <Link href="/amis" className={buttonClass("secondary")}>
+        Mes amis{requests ? ` · ${requests} demande${requests > 1 ? "s" : ""}` : ""}
+      </Link>
 
       <Link href="/reglages" className={buttonClass("secondary")}>
         Réglages et données

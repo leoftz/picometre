@@ -58,7 +58,7 @@ export default function Privacy() {
         </section>
         <section>
           <h2>Cookies</h2>
-          <p>Uniquement ceux qui te gardent connecté. Pas de mesure d&apos;audience, pas de publicité.</p>
+          <p>Uniquement ceux qui gardent ta session ouverte. Pas de mesure d&apos;audience, pas de publicité.</p>
         </section>
       </div>
     </PageShell>
