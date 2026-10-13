@@ -9,7 +9,7 @@
 | Sujet | Décision | Conséquence |
 |---|---|---|
 | Dépôt | `leoftz/picometre`, **public**, ruleset `protect-main` (PR obligatoire, historique linéaire, squash ou rebase) | Aucun secret ni donnée réelle dans le dépôt, jamais |
-| Supabase | **Un seul projet** `picometre-prod`, région **eu-west-1 (Irlande, UE)** | Pas de staging. Les migrations sont poussées en prod **après le merge** dans `main` |
+| Supabase | **Un seul projet** `picometre-prod`, région **eu-west-1 (Irlande, UE)** | Pas de staging. **Tant qu'il n'y a pas d'utilisateurs réels**, la migration d'un lot est appliquée en prod quand sa PR est prête, pour que les previews fonctionnent (décision du 13/10/2026). Ensuite, uniquement après le merge dans `main`. Tu lances `supabase db push --linked` toi-même ; je vérifie en lecture seule (tables, RLS, alertes de sécurité) |
 | Tests | Validation **en local** (stack Supabase via OrbStack) avant chaque commit et push | Les E2E et les données de test ne tournent qu'en local |
 | Previews Vercel | Branchées sur la base de prod, **clé publishable seulement**, protégées par Vercel Authentication | Une preview qui contient une migration non appliquée peut être incomplète. La preview sert à valider l'UI, le local sert à valider le fonctionnel |
 | Auth | Magic link et Google (scopes `openid email profile`) | L'app Google est en mode « Testing » jusqu'à sa publication (lot 10) |
