@@ -69,6 +69,44 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"consumptions": {
+                  Row: {
+                    "abv": number | null,"consumed_at": string,"created_at": string,"ethanol_g": number,"glass_size": string | null,"id": string,"is_water": boolean,"label": string,"party_drink_id": string | null,"party_id": string,"portion": number,"pour": Database["public"]['Enums']["pour_kind"],"user_id": string,"volume_ml": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "abv"?: number | null,"consumed_at"?: string,"created_at"?: string,"ethanol_g"?: number,"glass_size"?: string | null,"id": string,"is_water"?: boolean,"label"?: string,"party_drink_id"?: string | null,"party_id": string,"portion"?: number,"pour"?: Database["public"]['Enums']["pour_kind"],"user_id"?: string,"volume_ml"?: number
+                  }
+                  Update: {
+                    "abv"?: number | null,"consumed_at"?: string,"created_at"?: string,"ethanol_g"?: number,"glass_size"?: string | null,"id"?: string,"is_water"?: boolean,"label"?: string,"party_drink_id"?: string | null,"party_id"?: string,"portion"?: number,"pour"?: Database["public"]['Enums']["pour_kind"],"user_id"?: string,"volume_ml"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "consumptions_glass_size_fkey"
+      columns: ["glass_size"]
+isOneToOne: false
+      referencedRelation: "glass_sizes"
+      referencedColumns: ["slug"]
+    },{
+      foreignKeyName: "consumptions_party_drink_id_fkey"
+      columns: ["party_drink_id"]
+isOneToOne: false
+      referencedRelation: "party_drinks"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "consumptions_party_id_fkey"
+      columns: ["party_id"]
+isOneToOne: false
+      referencedRelation: "parties"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "consumptions_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"drink_type_glasses": {
                   Row: {
                     "drink_type": string,"glass_size": string,"is_default": boolean
