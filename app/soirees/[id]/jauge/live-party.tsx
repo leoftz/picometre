@@ -12,6 +12,7 @@ import { drinkType, glassSize } from "@/lib/bank/catalog";
 import { alertsFor } from "@/lib/party/alerts";
 import { type ParticipantData, toSimulationInput } from "@/lib/party/estimate";
 import { formatGrams, formatStandardDrinks, formatTime } from "@/lib/party/format";
+import { type SharedGauge, sameShare, shareFrom } from "@/lib/party/share";
 import { useEstimate } from "@/lib/party/use-estimate";
 import { createClient } from "@/lib/supabase/client";
 
@@ -104,10 +105,13 @@ export function LiveParty({
   participant,
   plannedDrinks,
   initialConsumptions,
+  sharing,
 }: {
   participant: Omit<ParticipantData, "consumptions">;
   plannedDrinks: PlannedDrink[];
   initialConsumptions: Consumption[];
+  /** The owner consented to share their level with this party (lot 8). */
+  sharing: boolean;
 }) {
   const { partyId } = participant;
   const supabase = useMemo(() => createClient(), []);
@@ -158,6 +162,30 @@ export function LiveParty({
       .eq("party_id", partyId)
       .eq("user_id", participant.userId);
   }, [result, now, supabase, partyId, participant.userId]);
+
+  // Lot 8: publish the level, its schedule and the Stop — never a value in g/L — only when it changes.
+  const published = useRef<SharedGauge | null>(null);
+  useEffect(() => {
+    if (!sharing) {
+      published.current = null;
+      return;
+    }
+    if (!result) return;
+    const share = shareFrom(result, now);
+    if (published.current && sameShare(published.current, share)) return;
+    published.current = share;
+    void (async () => {
+      const { data } = await supabase
+        .from("gauge_shares")
+        .update(share)
+        .eq("party_id", partyId)
+        .eq("user_id", participant.userId)
+        .select("id");
+      if (data?.length) return;
+      const { error: insertError } = await supabase.from("gauge_shares").insert({ party_id: partyId, ...share });
+      if (insertError && insertError.code !== "23505") published.current = null;
+    })();
+  }, [sharing, result, now, supabase, partyId, participant.userId]);
 
   const save = useCallback(
     async (entry: Consumption): Promise<boolean> => {
