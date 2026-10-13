@@ -199,6 +199,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"gauge_shares": {
+                  Row: {
+                    "computed_at": string,"id": string,"level": number,"party_id": string,"schedule": NonNullable<Json>,"stopped": boolean,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "computed_at"?: string,"id"?: string,"level": number,"party_id": string,"schedule"?: NonNullable<Json>,"stopped"?: boolean,"user_id"?: string
+                  }
+                  Update: {
+                    "computed_at"?: string,"id"?: string,"level"?: number,"party_id"?: string,"schedule"?: NonNullable<Json>,"stopped"?: boolean,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "gauge_shares_party_id_user_id_fkey"
+      columns: ["party_id","user_id"]
+isOneToOne: true
+      referencedRelation: "party_participants"
+      referencedColumns: ["party_id","user_id"]
+    }
+                  ]
                 },"glass_sizes": {
                   Row: {
                     "label": string,"param_ref": string,"slug": string,"volume_ml": number
