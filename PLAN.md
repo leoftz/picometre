@@ -212,7 +212,7 @@ Chaque lot suit le même cycle :
 | **L9 — Trophées** | Attribution par RPC en fin de soirée, écran dédié | L8 | S |
 | **L10 — Durcissement et mise en ligne** | SMTP dédié, publication de l'app Google, pages légales, audit d'accessibilité (WCAG AA), en-têtes de sécurité (CSP), passage de Supabase en plan payant | Tous | M |
 
-| **L11 — Recettes de cocktails** | Tables `cocktail_recipes` et `cocktail_recipe_ingredients` (en lecture seule, alimentées depuis R-01 à R-55). Bibliothèque proposée dans l'écran E7 uniquement, avec la version sans alcool à côté de chaque recette. Ajout en un tap aux boissons prévues | L4 | S/M |
+| **L11 — Recettes de cocktails** | Bibliothèque R-01 à R-23 et R-50 à R-55 dans `lib/bank/recipes.ts` (catalogue figé et versionné, vérifié contre la doc par un test, **sans table** : décision du 13/10/2026). Proposée dans E7 uniquement : fermée dès le premier verre noté, après la fin de la soirée ou après un Stop (règle appliquée aussi côté serveur). Version sans alcool à côté de chaque recette, recettes sans alcool en premier. Ajout en un tap, service « à l'œil » | L4 | S/M |
 
 Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes.
 

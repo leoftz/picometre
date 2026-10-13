@@ -403,8 +403,9 @@ export function LiveParty({
   );
 }
 
+// A planned drink without alcohol: a 0 % drink, or a cocktail without any alcohol (lot 11 recipes).
 function isAlcoholFree(drink: PlannedDrink) {
-  return drink.kind === "boisson" && Number(drink.abv) === 0;
+  return drink.kind === "boisson" ? Number(drink.abv) === 0 : Number(drink.ethanol_g) === 0;
 }
 
 function DrinkGrid({ drinks, onPick }: { drinks: PlannedDrink[]; onPick: (drink: PlannedDrink) => void }) {
