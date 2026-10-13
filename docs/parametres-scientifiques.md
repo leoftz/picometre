@@ -50,13 +50,13 @@ Elles reprennent des conventions courantes en France : degrés usuels du commerc
 | <a id="P-70"></a>P-70 | Vin rosé | 12,5 % | 11 – 13,5 % | verre à vin ★, grand verre |
 | <a id="P-71"></a>P-71 | Effervescent (champagne, crémant, prosecco) | 12 % | 11 – 12,5 % | flûte (10 cl) ★ |
 | <a id="P-72"></a>P-72 | Vin doux / porto | 19 % | 15 – 22 % | verre à apéritif (6 cl) ★ |
-| <a id="P-73"></a>P-73 | Apéritif / vermouth | 16 % | 14 – 18 % | verre à apéritif ★, 8 cl |
+| <a id="P-73"></a>P-73 | Apéritif / vermouth | 16 % | 14 – 18 % | verre à apéritif ★, grand verre à apéritif (8 cl, P-92) |
 | <a id="P-74"></a>P-74 | Spiritueux (vodka, gin, rhum, whisky, tequila, cachaça…) | 40 % | 37,5 – 50 % (le rhum agricole monte à 50 %) | shot (3 cl), dose (4 cl) ★, double (5 cl) |
 | <a id="P-75"></a>P-75 | Anisé (pastis) | 45 % | 40 – 45 % | dose pastis (2 cl) ★ |
 | <a id="P-76"></a>P-76 | Liqueur | 25 % | 15 – 35 % | shot (3 cl) ★ |
 | <a id="P-79"></a>P-79 | Bitter apéritif léger (type spritz) | 11 % | 8 – 15 % | ingrédient de cocktail uniquement |
 | <a id="P-77"></a>P-77 | Cocktail | calculé (P-03) | — | recette = un verre |
-| <a id="P-78"></a>P-78 | Soft / eau | 0 % | 0 % | verre (25 cl) ★ |
+| <a id="P-78"></a>P-78 | Soft / eau | 0 % | 0 % | verre (25 cl, P-93) ★ |
 
 #### Contenances de verre
 
@@ -74,6 +74,8 @@ Elles reprennent des conventions courantes en France : degrés usuels du commerc
 | <a id="P-89"></a>P-89 | Bouteille ou canette 33 cl | 33 cl | Bière 5 % : 13,0 g (≈ 1,3) ; triple 8,5 % : 22,1 g (≈ 2,2) |
 | <a id="P-90"></a>P-90 | Pinte | 50 cl | Bière 5 % : 19,7 g (≈ 2) ; IPA 6,5 % : 25,6 g (≈ 2,6) |
 | <a id="P-91"></a>P-91 | Verre personnalisé | 1 à 100 cl, saisi par l'utilisateur | — |
+| <a id="P-92"></a>P-92 | Grand verre à apéritif | 8 cl | Vermouth 16 % : 10,1 g (≈ 1) |
+| <a id="P-93"></a>P-93 | Verre (soft, eau) | 25 cl | 0 g |
 
 Cohérence avec P-02 : les équivalences classiques du verre standard français (demi de bière à 5 %, flûte, shot de 3 cl) donnent bien ≈ 10 g avec P-01.
 

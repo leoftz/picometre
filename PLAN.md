@@ -127,7 +127,7 @@ Deux fonctions `security definer` (avec `search_path` fixé) servent de briques 
 | `parties` | Les membres | INSERT par soi (host = soi). UPDATE et DELETE par l'hôte |
 | `party_participants` | Les membres de la soirée | INSERT par l'hôte, et seulement pour ses amis acceptés. UPDATE de sa propre ligne (objectif, repas, `share_gauge`). L'hôte peut retirer un invité |
 | `drink_types`, `glass_sizes`, `drink_type_glasses` | Tout utilisateur authentifié | Aucune écriture côté client. Modification uniquement par migration |
-| `party_drinks`, `cocktail_ingredients` | Les membres | INSERT, UPDATE et DELETE par l'hôte. Les membres peuvent ajouter une boisson pendant la soirée (voir question Q-12) |
+| `party_drinks`, `cocktail_ingredients` | Les membres | INSERT par tout membre, en son propre nom (`added_by`). UPDATE et DELETE par l'auteur ou l'hôte (Q-12) |
 | `consumptions`, `alerts` | **Soi-même uniquement** | Soi-même, et seulement si l'on est membre de la soirée |
 | `gauge_shares` | Soi-même, ou un membre de la soirée **si** `share_gauge = true` pour cette ligne | UPSERT par soi-même uniquement, seulement si `share_gauge = true` |
 | `trophies` | Les membres de la soirée | Attribution par une RPC `security definer` en fin de soirée, jamais par écriture directe |
@@ -263,7 +263,7 @@ Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes
 - **Q-9** — SMTP dédié pour les magic links (Brevo, entreprise française, ou Resend en région UE) : lequel, et à partir de quand ?
 - **Q-10** — Boissons prévues : liste fermée de types génériques, ou libellé libre (avec un risque de noms de marques) ?
 - **Q-11** — Éditeur et hébergeur pour les mentions légales : qui est le responsable du traitement (toi en nom propre, ou une structure) ?
-- **Q-12** — Les invités peuvent-ils ajouter une boisson non prévue pendant la soirée, ou seul l'hôte le peut-il ?
+- ✅ **Q-12** — Chaque membre ajoute ses propres boissons et cocktails, et peut les modifier ou les retirer. L'hôte gère toutes les boissons (décision du 13/10/2026, migration `private_party_helpers`).
 
 ### Banque de verres — tranchées le 13/10/2026
 - ✅ **Q-13** — Types, degrés, plages (P-60 à P-79) et contenances (P-80 à P-91) validés. Ajouts : plage des spiritueux étendue à 50 % (rhum agricole) et type « bitter léger » (P-79), nécessaires pour les recettes.
