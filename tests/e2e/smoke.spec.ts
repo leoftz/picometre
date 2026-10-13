@@ -1,25 +1,19 @@
 import { expect, test } from "@playwright/test";
 
-test("home page shows the brand, the 18+ notice and the fixed safety message", async ({ page }) => {
+test("the age gate comes first, with the fixed safety message", async ({ page }) => {
   await page.goto("/");
 
   await expect(page).toHaveTitle("Picomètre");
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("picomètre");
-  await expect(page.getByText("Réservé aux 18 ans et plus.")).toBeVisible();
+  await expect(page.getByText("Tu as 18 ans ou plus ?")).toBeVisible();
   await expect(page.getByText("Si tu as bu, tu ne conduis pas.")).toBeVisible();
 });
 
-test("every gauge level has a text label, not only a colour", async ({ page }) => {
+test("a minor is kept out", async ({ page }) => {
   await page.goto("/");
-  const levels = page.getByRole("list", { name: "Les niveaux de la jauge" }).getByRole("listitem");
-
-  await expect(levels).toHaveText([
-    "Niveau 1 : Frais comme un gardon",
-    "Niveau 2 : Ça pétille",
-    "Niveau 3 : La jauge chauffe",
-    "Niveau 4 : Pause obligatoire",
-  ]);
+  await page.getByRole("link", { name: "Non, pas encore" }).click();
+  await expect(page.getByRole("heading", { name: "Rendez-vous à tes 18 ans" })).toBeVisible();
 });
 
 test("the PWA manifest is installable", async ({ request }) => {
