@@ -16,11 +16,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      # Build-time placeholders: CI never talks to a real Supabase project.
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
-      NEXT_PUBLIC_SITE_URL: http://localhost:3100
       NEXT_TELEMETRY_DISABLED: 1
+      # The local stack's config.toml reads these; CI never signs in with Google.
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: ci-placeholder
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: ci-placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,6 +30,28 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+
+      # Throwaway local Supabase (Docker): migrations, RLS tests and E2E never touch production.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,storage-api,realtime
+      - name: RLS tests (pgTAP)
+        run: supabase test db
+      - name: Check generated database types are up to date
+        run: |
+          supabase gen types typescript --local > /tmp/database.types.ts
+          diff -q /tmp/database.types.ts lib/supabase/database.types.ts
+      - name: Point the app at the local stack
+        run: |
+          supabase status -o env | awk -F= '
+            /^API_URL=/ { gsub(/"/, "", $2); print "NEXT_PUBLIC_SUPABASE_URL=" $2 }
+            /^PUBLISHABLE_KEY=/ { gsub(/"/, "", $2); print "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=" $2 }
+            /^SECRET_KEY=/ { gsub(/"/, "", $2); print "SUPABASE_SECRET_KEY=" $2 }
+          ' >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SITE_URL=http://localhost:3100" >> "$GITHUB_ENV"
+
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

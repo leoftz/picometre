@@ -1,7 +1,9 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { publicEnv } from "@/lib/env";
+import type { Database } from "./database.types";
 
 /**
  * Supabase client for Server Components, Server Actions and Route Handlers, acting as the
@@ -9,9 +11,11 @@ import { publicEnv } from "@/lib/env";
  * With Cache Components, call it only inside a <Suspense> boundary: it reads cookies().
  */
 export async function createClient() {
+  // Session checks compare token expiry with Date.now(): defer to request time, never prerender them.
+  await connection();
   const cookieStore = await cookies();
 
-  return createServerClient(publicEnv.supabaseUrl, publicEnv.supabasePublishableKey, {
+  return createServerClient<Database>(publicEnv.supabaseUrl, publicEnv.supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
