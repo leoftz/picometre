@@ -42,3 +42,15 @@ export const OBJECTIVES: Record<Objective, ObjectiveConfig> = {
   /** docs/parametres-scientifiques.md#P-53 — never reach level 4, even at the high end of the range (#P-43). */
   festive: { label: "Soirée festive", peakP95Max: 0.8, capGrams: null, ref: "P-53" },
 };
+
+/**
+ * Trophies (lot 9) — never a reward for a quantity of alcohol (charte §9). Mirrored in the SQL that awards
+ * them (supabase/migrations/*_trophies.sql); lib/party/__tests__/trophies.test.ts checks both agree.
+ * docs/parametres-scientifiques.md#P-58 — « As du joker eau »: at least 2 waters, and 1 water per 2 alcoholic drinks.
+ * docs/parametres-scientifiques.md#P-59 — « Capitaine de soirée »: lowest peak level among at least 2 sharers.
+ */
+export const TROPHIES = {
+  jokerEauMinWater: 2,
+  jokerEauAlcoholPerWater: 2,
+  capitaineMinSharers: 2,
+} as const;

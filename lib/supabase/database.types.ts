@@ -201,14 +201,14 @@ isOneToOne: false
                   ]
                 },"gauge_shares": {
                   Row: {
-                    "computed_at": string,"id": string,"level": number,"party_id": string,"schedule": NonNullable<Json>,"stopped": boolean,"user_id": string
+                    "computed_at": string,"id": string,"level": number,"party_id": string,"peak_level": number,"schedule": NonNullable<Json>,"stopped": boolean,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "computed_at"?: string,"id"?: string,"level": number,"party_id": string,"schedule"?: NonNullable<Json>,"stopped"?: boolean,"user_id"?: string
+                    "computed_at"?: string,"id"?: string,"level": number,"party_id": string,"peak_level"?: number,"schedule"?: NonNullable<Json>,"stopped"?: boolean,"user_id"?: string
                   }
                   Update: {
-                    "computed_at"?: string,"id"?: string,"level"?: number,"party_id"?: string,"schedule"?: NonNullable<Json>,"stopped"?: boolean,"user_id"?: string
+                    "computed_at"?: string,"id"?: string,"level"?: number,"party_id"?: string,"peak_level"?: number,"schedule"?: NonNullable<Json>,"stopped"?: boolean,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -391,6 +391,26 @@ isOneToOne: true
                   Relationships: [
                     
                   ]
+                },"trophies": {
+                  Row: {
+                    "awarded_at": string,"id": number,"kind": Database["public"]['Enums']["trophy_kind"],"party_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "awarded_at"?: string,"id"?: never,"kind": Database["public"]['Enums']["trophy_kind"],"party_id": string,"user_id": string
+                  }
+                  Update: {
+                    "awarded_at"?: string,"id"?: never,"kind"?: Database["public"]['Enums']["trophy_kind"],"party_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "trophies_party_id_user_id_fkey"
+      columns: ["party_id","user_id"]
+isOneToOne: false
+      referencedRelation: "party_participants"
+      referencedColumns: ["party_id","user_id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -400,6 +420,9 @@ isOneToOne: true
             "accept_friend_invite":
 { Args: { "p_token": string }; Returns: string
                            },
+"claim_landing_trophy":
+{ Args: { "p_party_id": string }; Returns: boolean
+                           },
 "has_active_consent":
 { Args: { "p_kind": Database["public"]['Enums']["consent_kind"] }; Returns: boolean
                            },
@@ -408,7 +431,7 @@ isOneToOne: true
                            }
           }
           Enums: {
-            "consent_kind": "cgu"|"health_data"|"gauge_sharing","drink_family": "biere"|"cidre"|"vin"|"aperitif"|"spiritueux"|"liqueur"|"sans_alcool","drinking_habit": "occasionnel"|"regulier"|"frequent","friendship_status": "pending"|"accepted"|"declined","invite_status": "invited"|"accepted"|"declined","meal_kind": "aucun"|"collation"|"repas","participant_role": "host"|"guest","party_objective": "desinhibe"|"zero_gdb"|"festive","party_status": "planned"|"live"|"ended","planned_drink_kind": "boisson"|"cocktail","pour_kind": "dose"|"oeil","sex": "f"|"m"|"autre"
+            "consent_kind": "cgu"|"health_data"|"gauge_sharing","drink_family": "biere"|"cidre"|"vin"|"aperitif"|"spiritueux"|"liqueur"|"sans_alcool","drinking_habit": "occasionnel"|"regulier"|"frequent","friendship_status": "pending"|"accepted"|"declined","invite_status": "invited"|"accepted"|"declined","meal_kind": "aucun"|"collation"|"repas","participant_role": "host"|"guest","party_objective": "desinhibe"|"zero_gdb"|"festive","party_status": "planned"|"live"|"ended","planned_drink_kind": "boisson"|"cocktail","pour_kind": "dose"|"oeil","sex": "f"|"m"|"autre","trophy_kind": "capitaine"|"joker_eau"|"atterrissage"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -528,7 +551,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "consent_kind": ["cgu", "health_data", "gauge_sharing"],"drink_family": ["biere", "cidre", "vin", "aperitif", "spiritueux", "liqueur", "sans_alcool"],"drinking_habit": ["occasionnel", "regulier", "frequent"],"friendship_status": ["pending", "accepted", "declined"],"invite_status": ["invited", "accepted", "declined"],"meal_kind": ["aucun", "collation", "repas"],"participant_role": ["host", "guest"],"party_objective": ["desinhibe", "zero_gdb", "festive"],"party_status": ["planned", "live", "ended"],"planned_drink_kind": ["boisson", "cocktail"],"pour_kind": ["dose", "oeil"],"sex": ["f", "m", "autre"]
+            "consent_kind": ["cgu", "health_data", "gauge_sharing"],"drink_family": ["biere", "cidre", "vin", "aperitif", "spiritueux", "liqueur", "sans_alcool"],"drinking_habit": ["occasionnel", "regulier", "frequent"],"friendship_status": ["pending", "accepted", "declined"],"invite_status": ["invited", "accepted", "declined"],"meal_kind": ["aucun", "collation", "repas"],"participant_role": ["host", "guest"],"party_objective": ["desinhibe", "zero_gdb", "festive"],"party_status": ["planned", "live", "ended"],"planned_drink_kind": ["boisson", "cocktail"],"pour_kind": ["dose", "oeil"],"sex": ["f", "m", "autre"],"trophy_kind": ["capitaine", "joker_eau", "atterrissage"]
           }
         }
 } as const
