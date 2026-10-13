@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { LegalLinks } from "@/components/legal";
 import { Suspense } from "react";
 import { buttonClass } from "@/components/ui";
 
@@ -32,6 +33,7 @@ export default function AgeGate({ searchParams }: PageProps<"/">) {
       <p className="text-sm text-on-surface-muted">
         La jauge estime, l&apos;éthylotest décide. Si tu as bu, tu ne conduis pas.
       </p>
+      <LegalLinks />
     </main>
   );
 }

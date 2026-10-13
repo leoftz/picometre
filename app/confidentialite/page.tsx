@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
+import { Controller } from "@/components/legal";
 import { PageShell } from "@/components/ui";
+import { LEGAL } from "@/config/legal";
 
 export const metadata: Metadata = { title: "Politique de confidentialité" };
 
-// Draft to be validated (PLAN Q-11: data controller identity). Facts below match the implementation.
+// Facts below match the implementation; the controller comes from config/legal.ts (PLAN Q-11).
 export default function Privacy() {
   return (
     <PageShell title="Confidentialité">
-      <p className="rounded-carte bg-citron p-4 font-semibold text-nuit">
-        Version de travail du 13 octobre 2026, à faire valider avant l&apos;ouverture au public.
-      </p>
       <div className="flex flex-col gap-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_li]:ml-5 [&_li]:list-disc">
         <section>
           <h2>Qui est responsable ?</h2>
-          <p>[Identité et contact du responsable du traitement — à compléter.]</p>
+          <Controller />
         </section>
         <section>
           <h2>Quelles données, et pourquoi</h2>
@@ -21,6 +20,7 @@ export default function Privacy() {
             <li>Ton adresse e-mail : pour te connecter.</li>
             <li>Ton pseudo, ton avatar et ton année de naissance : ton personnage, et la preuve que tu as 18 ans. Ta date de naissance complète n&apos;est jamais enregistrée.</li>
             <li>Ton sexe, ta taille, ton poids, tes habitudes et tes consommations : uniquement pour estimer ta jauge. Ce sont des données de santé.</li>
+            <li>Tes soirées, tes amis, et, si tu le choisis pour une soirée, ton niveau de jauge partagé et tes trophées.</li>
           </ul>
         </section>
         <section>
@@ -47,6 +47,11 @@ export default function Privacy() {
           <ul>
             <li>Base de données : Supabase, en Irlande (Union européenne).</li>
             <li>Application : Vercel, avec des serveurs à Dublin (Union européenne).</li>
+            <li>
+              Ces deux sous-traitants sont des sociétés américaines. Les données restent stockées dans l&apos;Union européenne ;
+              les accès éventuels depuis les États-Unis sont encadrés par les clauses contractuelles types de la Commission
+              européenne.
+            </li>
             <li>Connexion avec Google, si tu la choisis : Google reçoit ta demande de connexion.</li>
           </ul>
         </section>
@@ -63,8 +68,15 @@ export default function Privacy() {
         </section>
         <section>
           <h2>Cookies</h2>
-          <p>Uniquement ceux qui gardent ta session ouverte. Pas de mesure d&apos;audience, pas de publicité.</p>
+          <p>
+            Uniquement ceux qui gardent ta session ouverte, et, si tu ouvres le lien d&apos;un ami avant de t&apos;inscrire,
+            celui qui retient ce lien pendant 7 jours au plus. Pas de mesure d&apos;audience, pas de publicité.
+          </p>
+          <p>
+            Sans réseau, les verres que tu notes restent sur ton téléphone jusqu&apos;à leur envoi.
+          </p>
         </section>
+        <p className="text-sm text-on-surface-muted">Version du {LEGAL.version}.</p>
       </div>
     </PageShell>
   );
