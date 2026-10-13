@@ -179,3 +179,12 @@ export async function stopSharingGauge(partyId: string): Promise<void> {
   revalidatePath(`/soirees/${partyId}`);
   revalidatePath(`/soirees/${partyId}/jauge`);
 }
+
+// Lot 9 — « Atterrissage parfait »: the device ran the estimate; the database checks what it can.
+export async function claimLandingTrophy(partyId: string): Promise<boolean> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("claim_landing_trophy", { p_party_id: partyId });
+  if (data) revalidatePath(`/soirees/${partyId}/bilan`);
+  return data === true;
+}

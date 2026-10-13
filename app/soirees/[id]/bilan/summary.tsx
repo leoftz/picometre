@@ -1,19 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { OBJECTIVES } from "@/config/objectifs";
 import { objectiveKept } from "@/lib/party/alerts";
 import { type ParticipantData, toSimulationInput } from "@/lib/party/estimate";
 import { formatStandardDrinks, formatTime } from "@/lib/party/format";
 import { useEstimate } from "@/lib/party/use-estimate";
+import { claimLandingTrophy } from "../../actions";
 
 const g = (value: number) => value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // E12 — individual summary, computed on the device like the gauge (health data never leaves it).
-export function Summary({ participant, waterCount }: { participant: ParticipantData; waterCount: number }) {
+export function Summary({
+  participant,
+  waterCount,
+  canClaimLanding,
+}: {
+  participant: ParticipantData;
+  waterCount: number;
+  /** The party is over and « Atterrissage parfait » is not awarded yet. */
+  canClaimLanding: boolean;
+}) {
   const [now] = useState(() => Date.now());
   const input = useMemo(() => toSimulationInput(participant, now), [participant, now]);
   const result = useEstimate(input);
+  const router = useRouter();
+
+  // « Atterrissage parfait » (lot 9): only this device can check the estimate, so it claims the trophy.
+  const claimed = useRef(false);
+  const objectiveMet = result ? objectiveKept(result, participant.objective) : false;
+  useEffect(() => {
+    if (!canClaimLanding || !objectiveMet || claimed.current) return;
+    claimed.current = true;
+    void claimLandingTrophy(participant.partyId).then((awarded) => {
+      if (awarded) router.refresh();
+    });
+  }, [canClaimLanding, objectiveMet, participant.partyId, router]);
+
   if (!result) return <p role="status" className="text-on-surface-muted">Calcul de ton bilan…</p>;
 
   const kept = objectiveKept(result, participant.objective);
