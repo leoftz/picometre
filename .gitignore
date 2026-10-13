@@ -1,0 +1,34 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# testing
+/coverage
+/playwright-report/
+/test-results/
+
+# env — never commit secrets (.env.example stays tracked)
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# supabase
+supabase/.branches
+supabase/.temp
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+npm-debug.log*
