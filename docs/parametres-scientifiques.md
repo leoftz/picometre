@@ -242,6 +242,16 @@ Règle commune pour le prochain verre (cahier des charges) : c'est le premier in
 | <a id="P-56"></a>P-56 | « Prochain verre possible à partir de HH:MM » | Règle de 6.3. Message purement informatif, jamais incitatif | Cahier des charges ; charte §9, règle 1 | 🎨 Charte |
 | <a id="P-57"></a>P-57 | Plafond de verres atteint (« Zéro gueule de bois ») | Total ≥ P-51 : affiche « Objectif atteint, place au joker eau » | P-51 | ⚠️ à valider |
 
+### 6.5 Trophées (lot 9)
+
+Aucun trophée ne récompense une quantité d'alcool (charte §9). Ces seuils ne viennent pas du PDF.
+
+| ID | Trophée | Règle | Source | Statut |
+|---|---|---|---|---|
+| <a id="P-58"></a>P-58 | « As du joker eau » | Au moins 2 verres d'eau notés, et au moins 1 verre d'eau pour 2 verres d'alcool | Charte §7 (joker eau) | hors PDF — à valider |
+| <a id="P-59"></a>P-59 | « Capitaine de soirée » | Niveau de pic (jauge p75, P-39) le plus bas parmi les participants qui partagent leur jauge, s'ils sont au moins 2. Les ex æquo l'obtiennent tous | Charte §2 (archétype) ; PLAN Q-5 | hors PDF — à valider |
+| — | « Atterrissage parfait » | Objectif tenu : pas de Stop (P-54), haut de la fourchette du pic sous le seuil de l'objectif (P-51 à P-53), plafond de l'objectif respecté | P-51 à P-54 | 🎨 Charte |
+
 ## 7. Cas de validation (tests unitaires)
 
 Source : figure « Manger avant de boire divise le pic d'alcoolémie par deux », p. 6, et ses hypothèses (p. 6). Valeurs **médianes** lues sur la figure.
