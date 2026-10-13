@@ -14,3 +14,9 @@ export const publicEnv = {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   ),
 };
+
+/**
+ * Sign-in by magic link (PLAN Q-9). Off unless explicitly enabled: production opens with Google only until a
+ * dedicated SMTP is set up (docs/mise-en-ligne.md). Local development and CI enable it (E2E sign in through Mailpit).
+ */
+export const magicLinkEnabled = process.env.NEXT_PUBLIC_MAGIC_LINK === "true";

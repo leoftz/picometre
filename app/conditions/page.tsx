@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
+import { Controller } from "@/components/legal";
 import { PageShell } from "@/components/ui";
+import { LEGAL } from "@/config/legal";
 
 export const metadata: Metadata = { title: "Conditions d'utilisation" };
 
-// Draft to be validated before public launch.
 export default function Terms() {
   return (
     <PageShell title="Conditions d'utilisation">
-      <p className="rounded-carte bg-citron p-4 font-semibold text-nuit">
-        Version de travail du 13 octobre 2026, à faire valider avant l&apos;ouverture au public.
-      </p>
       <div className="flex flex-col gap-6 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold">
         <section>
           <h2>18 ans et plus</h2>
@@ -34,6 +32,22 @@ export default function Terms() {
           <h2>Picomètre ne pousse jamais à boire</h2>
           <p>Pas de défi de quantité, pas de classement de consommation. Le but, c&apos;est de bien finir la soirée.</p>
         </section>
+        <section>
+          <h2>Entre amis</h2>
+          <p>
+            Choisis un pseudo qui ne vise personne. Ne partage pas le lien d&apos;invitation d&apos;un ami sans son accord. Ce
+            que les autres partagent avec toi reste entre vous.
+          </p>
+        </section>
+        <section>
+          <h2>Ton compte</h2>
+          <p>Tu peux exporter tes données ou supprimer ton compte à tout moment, depuis les réglages.</p>
+        </section>
+        <section>
+          <h2>Éditeur</h2>
+          <Controller />
+        </section>
+        <p className="text-sm text-on-surface-muted">Version du {LEGAL.version}.</p>
       </div>
     </PageShell>
   );

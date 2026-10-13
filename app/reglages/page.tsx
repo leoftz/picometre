@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalLinks } from "@/components/legal";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { Loading, PageShell, buttonClass } from "@/components/ui";
@@ -101,10 +102,7 @@ async function Content({ searchParams }: Pick<PageProps<"/reglages">, "searchPar
         <button type="submit" className={buttonClass("secondary")}>Me déconnecter</button>
       </form>
 
-      <p className="text-sm text-on-surface-muted">
-        <Link href="/confidentialite" className="underline">Politique de confidentialité</Link> ·{" "}
-        <Link href="/conditions" className="underline">Conditions d&apos;utilisation</Link>
-      </p>
+      <LegalLinks />
     </div>
   );
 }
