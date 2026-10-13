@@ -30,4 +30,7 @@ test("security headers are set", async ({ request }) => {
   expect(response.headers()["x-frame-options"]).toBe("DENY");
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
   expect(response.headers()["x-powered-by"]).toBeUndefined();
+  const csp = response.headers()["content-security-policy"];
+  expect(csp).toContain("frame-ancestors 'none'");
+  expect(csp).toContain("object-src 'none'");
 });
