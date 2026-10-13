@@ -76,16 +76,17 @@ flowchart LR
 ### Moteur `lib/bac` (contrat)
 
 ```
-simulate(profile, intakes[], meals[], objective, now, seed) → {
-  curve: { t, p5, p50, p95 }[]          // pas de 5 min (P-30)
-  peak, below05, below02, backToZero    // chacun avec p5/p50/p95 (P-37)
-  level: 1..4                           // sur p50 (P-40..P-43)
-  nextDrinkAt: Date | null              // règle P-51..P-53, null si Stop
+simulate({ profile, intakes[], meals[], objective, now, seed, stopLockedAt? }) → {
+  curve: { t, p5, p50, p95 }[]            // pas de 5 min (P-30)
+  current, peak, below05, below02, backToZero   // chacun avec p5/p50/p95 (P-37)
+  level: 1..4                             // sur p75 (P-39, P-40..P-43)
+  totalGrams, stopLocked                  // Stop définitif (P-54)
+  nextDrinkAt: number | null              // règle P-51..P-53, null si Stop ou plafond
   alerts: ('stop' | 'pause' | 'next' | 'cap')[]   // P-54..P-57
 }
 ```
 
-Ce sont des fonctions pures et déterministes (graine fixe, P-36). Les tests C-1 à C-3 reproduisent les cas du PDF. La performance visée est inférieure à 50 ms sur mobile (1 000 tirages × ~150 pas), sinon le calcul passe dans un Web Worker.
+Ce sont des fonctions pures et déterministes (graine fixe, P-36). Les tests C-1 à C-3 reproduisent les cas du PDF. Performance mesurée (L2, Node sur Mac) : 40 à 90 ms par estimation complète, recherche du prochain verre comprise. Sur mobile, ça peut prendre plusieurs fois plus. **Le calcul tournera donc dans un Web Worker (L5)** pour ne jamais bloquer l'interface.
 
 ---
 
@@ -246,7 +247,7 @@ Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes
 - **Q-P5** — Sexe « autre » : on applique la formule femme (P-08).
 - **Q-P6** — Variabilité : poids déclaré CV 5 % (P-34), variabilité de F (P-13), troncature de β (P-25), 1 000 tirages (P-36).
 - **Q-P7** — Seuils des objectifs : p95 < 0,5 / < 0,5 avec 2 verres maximum / < 0,8 (P-51 à P-53). « Désinhibé » et « Zéro gueule de bois » ne diffèrent que par le plafond de 2 verres : est-ce que ça te va ?
-- **Q-P8** — Stop **définitif** pour la soirée une fois 0,8 g/L atteint (P-54), et sur le p50. Faut-il aussi déclencher le Stop quand le **p95** atteint 0,8 ?
+- ✅ **Q-P8** — Stop **définitif** pour la soirée. Il se déclenche quand la jauge, sur le **p75** (P-39, option « c » validée le 13/10/2026), atteint 0,8 g/L.
 
 ### Produit et charte
 - **Q-1** — Vérification de l'âge : la déclaration (année de naissance et case à cocher) suffit-elle pour le MVP ? Une vérification réelle (pièce d'identité, tiers de confiance) est coûteuse.

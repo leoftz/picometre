@@ -192,6 +192,7 @@ Choix de P-23 : appliquer un β « chronique » ferait baisser l'estimation, don
 | <a id="P-36"></a>P-36 | Nombre de tirages Monte Carlo | 1 000 tirages, graine fixe par participant et par soirée, pour que la courbe reste stable à l'affichage | — | — | ⚠️ Hors PDF (choix technique) |
 | <a id="P-37"></a>P-37 | Sorties calculées | Pic (valeur et heure), heure de passage sous 0,5 g/L et sous 0,2 g/L, heure de retour à zéro, chacune avec sa fourchette | Sorties, p. 5 | — | ✅ PDF |
 | <a id="P-38"></a>P-38 | Seuil de « retour à zéro » | C < **0,01 g/L** | Absent | — | ⚠️ Hors PDF — à valider |
+| <a id="P-39"></a>P-39 | Estimation utilisée pour la jauge et le Stop | **Percentile 75** de la courbe. La courbe affichée reste la médiane (p50), avec sa fourchette p5–p95 | Absent. Choix validé le 13/10/2026 (option « c » de la PR #2) : en phase de descente, la médiane du moteur passe sous la figure p. 6 (jusqu'à −30 % vers 5 h). Le p75 compense sans modifier les paramètres du PDF | — | ⚠️ Hors PDF — validé |
 
 Note sur P-37 : les seuils de 0,5 et 0,2 g/L sont aussi des seuils de conduite (p. 8). L'app les utilise **uniquement comme repères de jauge** (§6). Elle ne les présente jamais comme liés à la conduite.
 
@@ -199,14 +200,14 @@ Note sur P-37 : les seuils de 0,5 et 0,2 g/L sont aussi des seuils de conduite (
 
 ### 6.1 Niveaux de jauge (charte §5, non négociables)
 
-| ID | Niveau | Plage (sur l'estimation médiane p50) | Libellé | Couleur | Lien avec le PDF |
+| ID | Niveau | Plage (sur l'estimation p75, P-39) | Libellé | Couleur | Lien avec le PDF |
 |---|---|---|---|---|---|
 | <a id="P-40"></a>P-40 | 1 — Frais | < 0,2 g/L | « Frais comme un gardon » | `#3DDC97` | 0,2 = Cs (P-27), fin de la saturation enzymatique |
 | <a id="P-41"></a>P-41 | 2 — Pétillant | 0,2 à < 0,5 g/L | « Ça pétille » | `#FFD23F` | 0,5 = repère opérationnel gueule de bois (P-45) |
 | <a id="P-42"></a>P-42 | 3 — Ça chauffe | 0,5 à < 0,8 g/L | « La jauge chauffe » | `#FF9F1C` | — |
 | <a id="P-43"></a>P-43 | 4 — Stop | ≥ 0,8 g/L | « Pause obligatoire » | `#E63946` | Plafond commun du cahier des charges |
 
-Statut : 🎨 Charte pour les quatre niveaux. Le niveau affiché utilise la médiane (p50), toujours accompagnée de sa fourchette p5–p95.
+Statut : 🎨 Charte pour les quatre niveaux. Le niveau affiché utilise le percentile 75 (P-39). La valeur affichée reste la médiane (p50), toujours accompagnée de sa fourchette p5–p95.
 
 ### 6.2 Repères du PDF utilisés pour les objectifs
 
@@ -234,8 +235,8 @@ Règle commune pour le prochain verre (cahier des charges) : c'est le premier in
 
 | ID | Alerte | Déclencheur proposé | Source | Statut |
 |---|---|---|---|---|
-| <a id="P-54"></a>P-54 | « Stop pour ce soir » (plafond commun) | p50 ≥ 0,8 g/L. **L'état est définitif pour la soirée** : plus aucune proposition de verre d'alcool, même quand la jauge redescend | Cahier des charges ; charte §9, règle 4 | 🎨 Charte (verrouillage définitif : ⚠️ à valider) |
-| <a id="P-55"></a>P-55 | « Pause fraîcheur conseillée » | p50 entre dans le niveau 3, ou le prochain verre n'est pas encore possible | Charte §7 (jauge) | 🎨 Charte |
+| <a id="P-54"></a>P-54 | « Stop pour ce soir » (plafond commun) | Estimation p75 (P-39) ≥ 0,8 g/L. **L'état est définitif pour la soirée** : plus aucune proposition de verre d'alcool, même quand la jauge redescend | Cahier des charges ; charte §9, règle 4 | 🎨 Charte (verrouillage définitif : ⚠️ à valider) |
+| <a id="P-55"></a>P-55 | « Pause fraîcheur conseillée » | La jauge (p75, P-39) entre dans le niveau 3, ou le prochain verre n'est pas encore possible | Charte §7 (jauge) | 🎨 Charte |
 | <a id="P-56"></a>P-56 | « Prochain verre possible à partir de HH:MM » | Règle de 6.3. Message purement informatif, jamais incitatif | Cahier des charges ; charte §9, règle 1 | 🎨 Charte |
 | <a id="P-57"></a>P-57 | Plafond de verres atteint (« Zéro gueule de bois ») | Total ≥ P-51 : affiche « Objectif atteint, place au joker eau » | P-51 | ⚠️ à valider |
 
@@ -259,15 +260,22 @@ Source : figure « Manger avant de boire divise le pic d'alcoolémie par deux »
 
 Le PDF annonce lui-même une incertitude de ±20 à 40 % (p. 6).
 
-**Pré-calibration** (simulation de brouillon, β et r fixés comme dans les hypothèses, ka selon P-16 et P-18, élimination selon P-26 à P-28) :
+**Résultats du moteur `lib/bac`** (Monte Carlo, 1 000 tirages, β fixé comme dans les hypothèses du PDF). Ce sont des tests automatiques : `lib/bac/__tests__/pdf-cases.test.ts`.
 
-| Cas | Pic simulé | Écart | Retour à 0 simulé |
-|---|---|---|---|
-| C-1 | 0,62 g/L à 1 h 05 | −5 % | 7,2 h |
-| C-2 | 0,59 g/L à 2 h 00 | −6 % | 8,7 h |
-| C-3 | 0,30 g/L à 2 h 10 | 0 % | 7,3 h |
+| Cas | Pic médian [p5 – p95] | Écart à la figure | Heure du pic | Retour à 0, médiane [p5 – p95] | Figure |
+|---|---|---|---|---|---|
+| C-1 | 0,61 [0,47 – 0,79] g/L | −6 % | 1 h 05 | 7,2 h [5,3 – 11,3] | 0,65 g/L à 1 h ; ~6,5 h |
+| C-2 (1 h 40) | 0,58 [0,42 – 0,77] g/L | −8 % | 2 h 00 | 8,7 h [6,3 – 13,6] | 0,63 g/L à 2 h ; ~7,5 h |
+| C-2 (2 h) | 0,54 [0,37 – 0,73] g/L | −14,7 %* | 2 h 20 | 8,7 h [6,4 – 13,7] | idem |
+| C-3 | 0,30 [0,20 – 0,43] g/L | 0 % | 2 h 10 | 7,3 h [5,8 – 11,4] | 0,30 g/L vers 2 h 30 ; ~6,25 h |
 
-Le retour à zéro simulé est 10 à 16 % plus tardif que la figure. Le biais va dans le sens prudent.
+\* La variante sur 2 h (sous-titre de la figure) reste dans la tolérance de ±15 %, mais de justesse (−14,7 %). La valeur de la figure reste dans la fourchette p5–p95. Le texte du PDF (1 h 40) reste la référence principale. Ce cas sera le premier à échouer si les paramètres d'absorption changent.
+
+**Constats :**
+- Pour chaque cas, la valeur de la figure se trouve dans la fourchette à 90 %.
+- La demi-largeur de la fourchette au pic vaut environ ±26 %, conforme aux ±20 à 40 % du PDF (p. 1 et 9).
+- Le repas divise le pic par 1,9 (PDF : « par deux »).
+- Le retour à zéro est 10 à 17 % plus tardif que sur la figure. Le biais va dans le sens prudent.
 
 ## 8. Ce que le PDF signale mais que l'app ne modélise pas
 
