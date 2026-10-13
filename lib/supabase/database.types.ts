@@ -23,7 +23,33 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "consents": {
+            "cocktail_ingredients": {
+                  Row: {
+                    "abv": number,"drink_type": string,"ethanol_g": number | null,"id": string,"party_drink_id": string,"volume_ml": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "abv": number,"drink_type": string,"ethanol_g"?: never,"id"?: string,"party_drink_id": string,"volume_ml": number
+                  }
+                  Update: {
+                    "abv"?: number,"drink_type"?: string,"ethanol_g"?: never,"id"?: string,"party_drink_id"?: string,"volume_ml"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cocktail_ingredients_drink_type_fkey"
+      columns: ["drink_type"]
+isOneToOne: false
+      referencedRelation: "drink_types"
+      referencedColumns: ["slug"]
+    },{
+      foreignKeyName: "cocktail_ingredients_party_drink_id_fkey"
+      columns: ["party_drink_id"]
+isOneToOne: false
+      referencedRelation: "party_drinks"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"consents": {
                   Row: {
                     "granted_at": string,"id": number,"kind": Database["public"]['Enums']["consent_kind"],"party_id": string | null,"revoked_at": string | null,"user_id": string,"version": string
                   }
@@ -35,7 +61,145 @@ export type Database = {
                     "granted_at"?: string,"id"?: never,"kind"?: Database["public"]['Enums']["consent_kind"],"party_id"?: string | null,"revoked_at"?: string | null,"user_id"?: string,"version"?: string
                   }
                   Relationships: [
+                    {
+      foreignKeyName: "consents_party_id_fkey"
+      columns: ["party_id"]
+isOneToOne: false
+      referencedRelation: "parties"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"drink_type_glasses": {
+                  Row: {
+                    "drink_type": string,"glass_size": string,"is_default": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "drink_type": string,"glass_size": string,"is_default"?: boolean
+                  }
+                  Update: {
+                    "drink_type"?: string,"glass_size"?: string,"is_default"?: boolean
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "drink_type_glasses_drink_type_fkey"
+      columns: ["drink_type"]
+isOneToOne: false
+      referencedRelation: "drink_types"
+      referencedColumns: ["slug"]
+    },{
+      foreignKeyName: "drink_type_glasses_glass_size_fkey"
+      columns: ["glass_size"]
+isOneToOne: false
+      referencedRelation: "glass_sizes"
+      referencedColumns: ["slug"]
+    }
+                  ]
+                },"drink_types": {
+                  Row: {
+                    "abv_default": number,"abv_max": number,"abv_min": number,"family": Database["public"]['Enums']["drink_family"],"label": string,"param_ref": string,"slug": string,"sort": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "abv_default": number,"abv_max": number,"abv_min": number,"family": Database["public"]['Enums']["drink_family"],"label": string,"param_ref": string,"slug": string,"sort": number
+                  }
+                  Update: {
+                    "abv_default"?: number,"abv_max"?: number,"abv_min"?: number,"family"?: Database["public"]['Enums']["drink_family"],"label"?: string,"param_ref"?: string,"slug"?: string,"sort"?: number
+                  }
+                  Relationships: [
                     
+                  ]
+                },"glass_sizes": {
+                  Row: {
+                    "label": string,"param_ref": string,"slug": string,"volume_ml": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "label": string,"param_ref": string,"slug": string,"volume_ml": number
+                  }
+                  Update: {
+                    "label"?: string,"param_ref"?: string,"slug"?: string,"volume_ml"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"parties": {
+                  Row: {
+                    "created_at": string,"ended_at": string | null,"host_id": string,"id": string,"location": string | null,"starts_at": string,"status": Database["public"]['Enums']["party_status"],"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"ended_at"?: string | null,"host_id"?: string,"id"?: string,"location"?: string | null,"starts_at": string,"status"?: Database["public"]['Enums']["party_status"],"title": string
+                  }
+                  Update: {
+                    "created_at"?: string,"ended_at"?: string | null,"host_id"?: string,"id"?: string,"location"?: string | null,"starts_at"?: string,"status"?: Database["public"]['Enums']["party_status"],"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "parties_host_id_fkey"
+      columns: ["host_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"party_drinks": {
+                  Row: {
+                    "abv": number | null,"created_at": string,"default_glass": string | null,"drink_type": string | null,"ethanol_g": number,"id": string,"kind": Database["public"]['Enums']["planned_drink_kind"],"name": string | null,"party_id": string,"pour": Database["public"]['Enums']["pour_kind"]
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "abv"?: number | null,"created_at"?: string,"default_glass"?: string | null,"drink_type"?: string | null,"ethanol_g"?: number,"id"?: string,"kind": Database["public"]['Enums']["planned_drink_kind"],"name"?: string | null,"party_id": string,"pour"?: Database["public"]['Enums']["pour_kind"]
+                  }
+                  Update: {
+                    "abv"?: number | null,"created_at"?: string,"default_glass"?: string | null,"drink_type"?: string | null,"ethanol_g"?: number,"id"?: string,"kind"?: Database["public"]['Enums']["planned_drink_kind"],"name"?: string | null,"party_id"?: string,"pour"?: Database["public"]['Enums']["pour_kind"]
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "party_drinks_default_glass_fkey"
+      columns: ["default_glass"]
+isOneToOne: false
+      referencedRelation: "glass_sizes"
+      referencedColumns: ["slug"]
+    },{
+      foreignKeyName: "party_drinks_drink_type_fkey"
+      columns: ["drink_type"]
+isOneToOne: false
+      referencedRelation: "drink_types"
+      referencedColumns: ["slug"]
+    },{
+      foreignKeyName: "party_drinks_party_id_fkey"
+      columns: ["party_id"]
+isOneToOne: false
+      referencedRelation: "parties"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"party_participants": {
+                  Row: {
+                    "invite_status": Database["public"]['Enums']["invite_status"],"joined_at": string | null,"meal_at": string | null,"meal_kind": Database["public"]['Enums']["meal_kind"] | null,"objective": Database["public"]['Enums']["party_objective"] | null,"party_id": string,"role": Database["public"]['Enums']["participant_role"],"share_gauge": boolean,"stop_locked_at": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "invite_status"?: Database["public"]['Enums']["invite_status"],"joined_at"?: string | null,"meal_at"?: string | null,"meal_kind"?: Database["public"]['Enums']["meal_kind"] | null,"objective"?: Database["public"]['Enums']["party_objective"] | null,"party_id": string,"role"?: Database["public"]['Enums']["participant_role"],"share_gauge"?: boolean,"stop_locked_at"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "invite_status"?: Database["public"]['Enums']["invite_status"],"joined_at"?: string | null,"meal_at"?: string | null,"meal_kind"?: Database["public"]['Enums']["meal_kind"] | null,"objective"?: Database["public"]['Enums']["party_objective"] | null,"party_id"?: string,"role"?: Database["public"]['Enums']["participant_role"],"share_gauge"?: boolean,"stop_locked_at"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "party_participants_party_id_fkey"
+      columns: ["party_id"]
+isOneToOne: false
+      referencedRelation: "parties"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "party_participants_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"profile_health": {
                   Row: {
@@ -79,10 +243,16 @@ isOneToOne: true
           Functions: {
             "has_active_consent":
 { Args: { "p_kind": Database["public"]['Enums']["consent_kind"] }; Returns: boolean
+                           },
+"is_party_host":
+{ Args: { "p_party_id": string }; Returns: boolean
+                           },
+"is_party_member":
+{ Args: { "p_party_id": string }; Returns: boolean
                            }
           }
           Enums: {
-            "consent_kind": "cgu"|"health_data"|"gauge_sharing","drinking_habit": "occasionnel"|"regulier"|"frequent","sex": "f"|"m"|"autre"
+            "consent_kind": "cgu"|"health_data"|"gauge_sharing","drink_family": "biere"|"cidre"|"vin"|"aperitif"|"spiritueux"|"liqueur"|"sans_alcool","drinking_habit": "occasionnel"|"regulier"|"frequent","invite_status": "invited"|"accepted"|"declined","meal_kind": "aucun"|"collation"|"repas","participant_role": "host"|"guest","party_objective": "desinhibe"|"zero_gdb"|"festive","party_status": "planned"|"live"|"ended","planned_drink_kind": "boisson"|"cocktail","pour_kind": "dose"|"oeil","sex": "f"|"m"|"autre"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -202,7 +372,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "consent_kind": ["cgu", "health_data", "gauge_sharing"],"drinking_habit": ["occasionnel", "regulier", "frequent"],"sex": ["f", "m", "autre"]
+            "consent_kind": ["cgu", "health_data", "gauge_sharing"],"drink_family": ["biere", "cidre", "vin", "aperitif", "spiritueux", "liqueur", "sans_alcool"],"drinking_habit": ["occasionnel", "regulier", "frequent"],"invite_status": ["invited", "accepted", "declined"],"meal_kind": ["aucun", "collation", "repas"],"participant_role": ["host", "guest"],"party_objective": ["desinhibe", "zero_gdb", "festive"],"party_status": ["planned", "live", "ended"],"planned_drink_kind": ["boisson", "cocktail"],"pour_kind": ["dose", "oeil"],"sex": ["f", "m", "autre"]
           }
         }
 } as const
