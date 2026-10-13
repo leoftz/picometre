@@ -1,7 +1,7 @@
 -- RLS and integrity of lot 4: drink bank, parties, participants, planned drinks and cocktails.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(37);
 
 -- A hosts, B is a guest (added directly, invitations come in lot 7), C is a stranger. D has no character yet.
 insert into auth.users (id, email, aud, role) values
@@ -107,13 +107,28 @@ select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select is((select count(*) from public.parties)::int, 1, 'a guest sees the party');
 select is((select count(*) from public.party_participants)::int, 2, 'a guest sees who takes part');
 select is((select count(*) from public.party_drinks)::int, 2, 'a guest sees the planned drinks');
-select throws_ok(
-  $$ insert into public.party_drinks (party_id, kind, drink_type, abv, default_glass)
-     values ('11111111-1111-1111-1111-111111111111', 'boisson', 'vin-rouge', 13, 'vin') $$,
-  '42501', null, 'a guest cannot add drinks (host only, PLAN Q-12)'
+select lives_ok(
+  $$ insert into public.party_drinks (id, party_id, kind, drink_type, abv, default_glass)
+     values ('44444444-4444-4444-4444-444444444444', '11111111-1111-1111-1111-111111111111', 'boisson', 'vin-rouge', 13, 'vin') $$,
+  'a guest adds their own drink (PLAN Q-12)'
 );
-update public.party_drinks set abv = 5.5;
-delete from public.party_drinks;
+select is(
+  (select added_by from public.party_drinks where id = '44444444-4444-4444-4444-444444444444'),
+  '00000000-0000-0000-0000-00000000000b'::uuid, 'the drink is recorded as added by the guest'
+);
+select throws_ok(
+  $$ insert into public.party_drinks (party_id, kind, drink_type, abv, default_glass, added_by)
+     values ('11111111-1111-1111-1111-111111111111', 'boisson', 'vin-rouge', 13, 'vin', '00000000-0000-0000-0000-00000000000a') $$,
+  '42501', null, 'nobody can add a drink in someone else''s name'
+);
+select lives_ok(
+  $$ update public.party_drinks set abv = 13.5 where id = '44444444-4444-4444-4444-444444444444' $$,
+  'a guest edits their own drink'
+);
+select is((select abv from public.party_drinks where id = '44444444-4444-4444-4444-444444444444'), 13.5, 'and the edit is saved');
+update public.party_drinks set abv = 5.5 where kind = 'boisson' and drink_type = 'biere-ipa';
+delete from public.party_drinks where id <> '44444444-4444-4444-4444-444444444444';
+delete from public.cocktail_ingredients;
 update public.parties set title = 'Piraté';
 
 select lives_ok(
@@ -132,8 +147,14 @@ select throws_ok(
 );
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000a');
-select is((select abv from public.party_drinks where kind = 'boisson'), 6.5, 'the guest could not edit the host''s drinks');
-select is((select count(*) from public.party_drinks)::int, 2, 'the guest could not delete the host''s drinks');
+select is((select abv from public.party_drinks where drink_type = 'biere-ipa'), 6.5, 'the guest could not edit the host''s drinks');
+select is((select count(*) from public.party_drinks)::int, 3, 'the guest could not delete the host''s drinks');
+select is((select count(*) from public.cocktail_ingredients)::int, 1, 'nor the host''s cocktail recipe');
+select lives_ok(
+  $$ delete from public.party_drinks where id = '44444444-4444-4444-4444-444444444444' $$,
+  'the host can remove a guest''s drink'
+);
+select is((select count(*) from public.party_drinks)::int, 2, 'and it is gone');
 select is((select title from public.parties), 'Crémaillère', 'the guest could not rename the party');
 select is(
   (select objective::text from public.party_participants where user_id = '00000000-0000-0000-0000-00000000000a'), null,
