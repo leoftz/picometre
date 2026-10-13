@@ -102,14 +102,14 @@ Toutes les tables sont en `public`, avec RLS **activée et forcée**. Les clés 
 | `friendships` | `id`, `requester_id`, `addressee_id`, `status` (`pending`/`accepted`/`declined`), `created_at`, `responded_at` | Unicité sur la paire, quel que soit le sens |
 | `friend_invites` | `token` (aléatoire), `inviter_id`, `expires_at`, `used_by`, `used_at` | Invitation par lien, à usage unique, expire après 7 jours |
 | `parties` | `id`, `host_id`, `title`, `starts_at`, `location` (nullable), `status` (`planned`/`live`/`ended`), `ended_at` | |
-| `party_participants` | `party_id`, `user_id`, `role` (`host`/`guest`), `invite_status`, `objective` (`desinhibe`/`zero_gdb`/`festive`), `meal_kind` (`aucun`/`collation`/`repas`), `meal_at`, `share_gauge` (bool), `stop_locked_at` | PK `(party_id, user_id)`. `share_gauge` est faux par défaut |
+| `party_participants` | `party_id`, `user_id`, `role` (`host`/`guest`), `invite_status`, `share_gauge` (bool), `joined_at` | PK `(party_id, user_id)`. Lisible par les membres : **ne contient que ce que le groupe a le droit de voir**. `share_gauge` est faux par défaut |
+| `participant_private` | `party_id`, `user_id`, `objective`, `meal_kind`, `meal_at`, `stop_locked_at` | **Propriétaire seulement** (lot 6). Ces colonnes étaient dans `party_participants`, donc visibles du groupe sans consentement. Le Stop y est définitif une fois enregistré |
 | `drink_types` | `id`, `slug`, `label`, `family` (`biere`/`cidre`/`vin`/`effervescent`/`aperitif`/`spiritueux`/`liqueur`/`cocktail`/`soft`/`eau`), `abv_default`, `abv_min`, `abv_max`, `param_ref` (ex. `P-60`), `sort` | **Banque de référence** (P-60 à P-78), alimentée par une migration de données, en lecture seule pour tous |
 | `glass_sizes` | `id`, `slug`, `label`, `volume_ml`, `param_ref` (ex. `P-90`) | **Banque de référence** (P-80 à P-91), en lecture seule |
 | `drink_type_glasses` | `drink_type_id`, `glass_size_id`, `is_default` | Verres proposés pour chaque type (★ = par défaut) |
 | `party_drinks` | `id`, `party_id`, `drink_type_id`, `label` (facultatif, générique), `abv` (borné à la plage du type, par contrainte CHECK et trigger), `default_glass_id`, `pour` (`dose`/`oeil`) | Boissons prévues pour la soirée, choisies dans la banque. Sans marque (loi Évin) |
 | `cocktail_ingredients` | `id`, `party_drink_id`, `drink_type_id`, `volume_ml`, `abv` | Un cocktail est une recette d'ingrédients tirés de la banque. `ethanol_g` recalculé par trigger (P-01, P-03) |
 | `consumptions` | `id`, `party_id`, `user_id`, `party_drink_id`, `glass_size_id`, `volume_ml`, `abv`, `ethanol_g` (**figés au moment de la saisie**), `consumed_at`, `client_id` (idempotence hors ligne) | Visible par son propriétaire seulement. Volume et degré sont recopiés pour que l'historique ne change jamais |
-| `alerts` | `id`, `party_id`, `user_id`, `kind`, `payload` (jsonb), `created_at`, `seen_at` | Historique pour le bilan |
 | `gauge_shares` | `party_id`, `user_id`, `level` (1 à 4), `schedule` (jsonb : `[{at, level}]`), `computed_at` | Publiée dans Realtime. **Aucune valeur en g/L** |
 | `trophies` | `id`, `party_id`, `user_id`, `kind` (`capitaine`/`joker_eau`/`atterrissage`), `awarded_at` | Lot 9 |
 
@@ -128,7 +128,7 @@ Deux fonctions `security definer` (avec `search_path` fixé) servent de briques 
 | `party_participants` | Les membres de la soirée | INSERT par l'hôte, et seulement pour ses amis acceptés. UPDATE de sa propre ligne (objectif, repas, `share_gauge`). L'hôte peut retirer un invité |
 | `drink_types`, `glass_sizes`, `drink_type_glasses` | Tout utilisateur authentifié | Aucune écriture côté client. Modification uniquement par migration |
 | `party_drinks`, `cocktail_ingredients` | Les membres | INSERT par tout membre, en son propre nom (`added_by`). UPDATE et DELETE par l'auteur ou l'hôte (Q-12) |
-| `consumptions`, `alerts` | **Soi-même uniquement** | Soi-même, et seulement si l'on est membre de la soirée |
+| `consumptions`, `participant_private` | **Soi-même uniquement** | Soi-même, et seulement si l'on est membre de la soirée |
 | `gauge_shares` | Soi-même, ou un membre de la soirée **si** `share_gauge = true` pour cette ligne | UPSERT par soi-même uniquement, seulement si `share_gauge = true` |
 | `trophies` | Les membres de la soirée | Attribution par une RPC `security definer` en fin de soirée, jamais par écriture directe |
 
@@ -215,6 +215,8 @@ Chaque lot suit le même cycle :
 | **L11 — Recettes de cocktails** | Tables `cocktail_recipes` et `cocktail_recipe_ingredients` (en lecture seule, alimentées depuis R-01 à R-55). Bibliothèque proposée dans l'écran E7 uniquement, avec la version sans alcool à côté de chaque recette. Ajout en un tap aux boissons prévues | L4 | S/M |
 
 Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes.
+
+**Écart au modèle initial (lot 6)** : pas de table `alerts`. Les alertes se recalculent entièrement sur l'appareil à partir des verres enregistrés, donc les stocker n'apporterait rien (minimisation RGPD). Seul le Stop définitif est mémorisé, dans `participant_private.stop_locked_at`.
 
 ---
 
