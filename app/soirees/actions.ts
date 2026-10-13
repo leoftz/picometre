@@ -123,3 +123,35 @@ export async function endParty(partyId: string): Promise<void> {
   revalidatePath(`/soirees/${partyId}`);
   redirect(`/soirees/${partyId}/bilan`);
 }
+
+/** Host only (RLS: accepted friends only). Invited friends then accept or decline. */
+export async function inviteFriends(partyId: string, formData: FormData): Promise<void> {
+  await requireUser();
+  const ids = formData.getAll("friend").map(String).filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+  if (ids.length > 0) {
+    const supabase = await createClient();
+    await supabase.from("party_participants").insert(ids.map((user_id) => ({ party_id: partyId, user_id })));
+  }
+  revalidatePath(`/soirees/${partyId}`);
+}
+
+export async function answerInvitation(partyId: string, accept: boolean): Promise<void> {
+  const user = await requireUser();
+  const supabase = await createClient();
+  await supabase
+    .from("party_participants")
+    .update({ invite_status: accept ? "accepted" : "declined" })
+    .eq("party_id", partyId)
+    .eq("user_id", user.id);
+  revalidatePath("/accueil");
+  redirect(accept ? `/soirees/${partyId}` : "/accueil");
+}
+
+/** The host removes a guest, or a guest leaves (RLS); the guest's private data for the party goes with it. */
+export async function removeParticipant(partyId: string, userId: string): Promise<void> {
+  const user = await requireUser();
+  const supabase = await createClient();
+  await supabase.from("party_participants").delete().eq("party_id", partyId).eq("user_id", userId);
+  if (userId === user.id) redirect("/accueil");
+  revalidatePath(`/soirees/${partyId}`);
+}
