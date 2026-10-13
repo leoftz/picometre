@@ -84,7 +84,7 @@ export function GroupView({ partyId, myId, members, initialShares }: { partyId: 
         return (
           <li key={member.userId} className="flex items-center justify-between gap-3 rounded-bouton bg-white/5 px-4 py-3">
             <span className="flex items-center gap-3">
-              <Avatar id={member.avatar as AvatarId} size={36} />
+              <span className="shrink-0"><Avatar id={member.avatar as AvatarId} size={36} /></span>
               <span>
                 <span className="font-semibold">
                   {member.pseudo}
