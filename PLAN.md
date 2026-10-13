@@ -14,6 +14,18 @@
 | Previews Vercel | Branchées sur la base de prod, **clé publishable seulement**, protégées par Vercel Authentication | Une preview qui contient une migration non appliquée peut être incomplète. La preview sert à valider l'UI, le local sert à valider le fonctionnel |
 | Auth | Magic link et Google (scopes `openid email profile`) | L'app Google est en mode « Testing » jusqu'à sa publication (lot 10) |
 
+### Écarts à la charte imposés par le contraste WCAG AA (charte §5)
+
+La charte impose à la fois ses couleurs et le niveau AA (4,5:1 pour le texte courant). Trois de ses combinaisons n'y arrivent pas. La vérification est automatisée dans `lib/brand/__tests__/tokens.test.ts`.
+
+| Combinaison de la charte | Contraste | Correction appliquée |
+|---|---|---|
+| Bouton primaire : texte Crème sur Corail (§7) | 2,90:1 ❌ | Texte **Bleu Nuit** sur Corail (5,27:1) |
+| Texte secondaire Ardoise sur fond Bleu Nuit (mode sombre par défaut) | 1,98:1 ❌ | Nouveau jeton **Brume** `#BBB7BA` (crème à 70 %), à 8,11:1. Ardoise reste utilisée en mode clair (7,71:1) |
+| Texte sur le rouge du niveau 4 `#E63946` | 3,86:1 au mieux ❌ | Texte sur ce rouge **uniquement en grand format** (≥ 24 px, seuil de 3:1). Les petits libellés vont sur fond neutre, le rouge sert au remplissage et à l'icône |
+
+Les cartes de jeu « Défi » et « Question » (texte crème sur corail ou violet) passent le seuil grand texte de 3:1 avec la taille de la charte (Baloo 2 de 28 à 36 px), mais elles sont hors périmètre (Q-2).
+
 ---
 
 ## 1. Architecture
