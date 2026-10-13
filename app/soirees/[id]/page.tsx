@@ -58,6 +58,10 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
         </p>
       </header>
 
+      <Link href={`/soirees/${party.id}/jauge`} className={buttonClass("primary")}>
+        Ouvrir ma jauge
+      </Link>
+
       <section aria-labelledby="mon-objectif" className="flex flex-col gap-4">
         <h2 id="mon-objectif" className="font-display text-2xl font-bold">Ma soirée</h2>
         <ParticipationForm
