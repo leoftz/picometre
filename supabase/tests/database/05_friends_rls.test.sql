@@ -68,7 +68,7 @@ select throws_ok(
 );
 
 reset role;
-create temp table link as select token from public.friend_invites;
+create temp table link as select token from public.friend_invites where inviter_id = '00000000-0000-0000-0000-00000000000a';
 grant select on link to authenticated;
 set local role authenticated;
 
