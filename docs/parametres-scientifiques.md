@@ -259,15 +259,22 @@ Source : figure « Manger avant de boire divise le pic d'alcoolémie par deux »
 
 Le PDF annonce lui-même une incertitude de ±20 à 40 % (p. 6).
 
-**Pré-calibration** (simulation de brouillon, β et r fixés comme dans les hypothèses, ka selon P-16 et P-18, élimination selon P-26 à P-28) :
+**Résultats du moteur `lib/bac`** (Monte Carlo, 1 000 tirages, β fixé comme dans les hypothèses du PDF). Ce sont des tests automatiques : `lib/bac/__tests__/pdf-cases.test.ts`.
 
-| Cas | Pic simulé | Écart | Retour à 0 simulé |
-|---|---|---|---|
-| C-1 | 0,62 g/L à 1 h 05 | −5 % | 7,2 h |
-| C-2 | 0,59 g/L à 2 h 00 | −6 % | 8,7 h |
-| C-3 | 0,30 g/L à 2 h 10 | 0 % | 7,3 h |
+| Cas | Pic médian [p5 – p95] | Écart à la figure | Heure du pic | Retour à 0, médiane [p5 – p95] | Figure |
+|---|---|---|---|---|---|
+| C-1 | 0,61 [0,47 – 0,79] g/L | −6 % | 1 h 05 | 7,2 h [5,3 – 11,3] | 0,65 g/L à 1 h ; ~6,5 h |
+| C-2 (1 h 40) | 0,58 [0,42 – 0,77] g/L | −8 % | 2 h 00 | 8,7 h [6,3 – 13,6] | 0,63 g/L à 2 h ; ~7,5 h |
+| C-2 (2 h) | 0,54 [0,37 – 0,73] g/L | −14,7 %* | 2 h 20 | 8,7 h [6,4 – 13,7] | idem |
+| C-3 | 0,30 [0,20 – 0,43] g/L | 0 % | 2 h 10 | 7,3 h [5,8 – 11,4] | 0,30 g/L vers 2 h 30 ; ~6,25 h |
 
-Le retour à zéro simulé est 10 à 16 % plus tardif que la figure. Le biais va dans le sens prudent.
+\* La variante sur 2 h (sous-titre de la figure) reste dans la tolérance de ±15 %, mais de justesse (−14,7 %). La valeur de la figure reste dans la fourchette p5–p95. Le texte du PDF (1 h 40) reste la référence principale. Ce cas sera le premier à échouer si les paramètres d'absorption changent.
+
+**Constats :**
+- Pour chaque cas, la valeur de la figure se trouve dans la fourchette à 90 %.
+- La demi-largeur de la fourchette au pic vaut environ ±26 %, conforme aux ±20 à 40 % du PDF (p. 1 et 9).
+- Le repas divise le pic par 1,9 (PDF : « par deux »).
+- Le retour à zéro est 10 à 17 % plus tardif que sur la figure. Le biais va dans le sens prudent.
 
 ## 8. Ce que le PDF signale mais que l'app ne modélise pas
 

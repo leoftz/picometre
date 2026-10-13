@@ -76,16 +76,17 @@ flowchart LR
 ### Moteur `lib/bac` (contrat)
 
 ```
-simulate(profile, intakes[], meals[], objective, now, seed) → {
-  curve: { t, p5, p50, p95 }[]          // pas de 5 min (P-30)
-  peak, below05, below02, backToZero    // chacun avec p5/p50/p95 (P-37)
-  level: 1..4                           // sur p50 (P-40..P-43)
-  nextDrinkAt: Date | null              // règle P-51..P-53, null si Stop
+simulate({ profile, intakes[], meals[], objective, now, seed, stopLockedAt? }) → {
+  curve: { t, p5, p50, p95 }[]            // pas de 5 min (P-30)
+  current, peak, below05, below02, backToZero   // chacun avec p5/p50/p95 (P-37)
+  level: 1..4                             // sur p50 (P-40..P-43)
+  totalGrams, stopLocked                  // Stop définitif (P-54)
+  nextDrinkAt: number | null              // règle P-51..P-53, null si Stop ou plafond
   alerts: ('stop' | 'pause' | 'next' | 'cap')[]   // P-54..P-57
 }
 ```
 
-Ce sont des fonctions pures et déterministes (graine fixe, P-36). Les tests C-1 à C-3 reproduisent les cas du PDF. La performance visée est inférieure à 50 ms sur mobile (1 000 tirages × ~150 pas), sinon le calcul passe dans un Web Worker.
+Ce sont des fonctions pures et déterministes (graine fixe, P-36). Les tests C-1 à C-3 reproduisent les cas du PDF. Performance mesurée (L2, Node sur Mac) : 40 à 90 ms par estimation complète, recherche du prochain verre comprise. Sur mobile, ça peut prendre plusieurs fois plus. **Le calcul tournera donc dans un Web Worker (L5)** pour ne jamais bloquer l'interface.
 
 ---
 
