@@ -9,11 +9,13 @@ import type { AvatarId } from "@/lib/account/avatars";
 import { drinkType, glassSize } from "@/lib/bank/catalog";
 import { enforceOnboarding } from "@/lib/auth/dal";
 import { formatAbv, formatGrams, formatPartyDate, formatStandardDrinks } from "@/lib/party/format";
+import { libraryOpen } from "@/lib/party/library";
 import { createClient } from "@/lib/supabase/server";
 import { answerInvitation, deleteParty, endParty, inviteFriends, removeParticipant, removePlannedDrink } from "../actions";
 import { AddCocktailForm } from "./add-cocktail-form";
 import { AddDrinkForm } from "./add-drink-form";
 import { ParticipationForm } from "./participation-form";
+import { RecipeLibrary } from "./recipe-library";
 
 export const metadata: Metadata = { title: "Soirée" };
 
@@ -37,9 +39,9 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
   if (!UUID.test(id)) notFound();
 
   const supabase = await createClient();
-  const [{ data: party }, { data: me }, { data: drinks }, { data: participants }, { data: cards }, { data: friendships }] = await Promise.all([
+  const [{ data: party }, { data: me }, { data: drinks }, { data: participants }, { data: cards }, { data: friendships }, { count: drinksEntered }] = await Promise.all([
     supabase.from("parties").select("id, title, starts_at, location, host_id, status").eq("id", id).maybeSingle(),
-    supabase.from("participant_private").select("objective, meal_kind, meal_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("participant_private").select("objective, meal_kind, meal_at, stop_locked_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
     supabase
       .from("party_drinks")
       .select("id, kind, drink_type, abv, default_glass, name, ethanol_g, pour, added_by, cocktail_ingredients(drink_type, volume_ml, abv)")
@@ -48,10 +50,12 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
     supabase.from("party_participants").select("user_id, role, invite_status, share_gauge").eq("party_id", id).order("role"),
     supabase.from("profile_cards").select("id, pseudo, avatar"),
     supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted"),
+    supabase.from("consumptions").select("id", { count: "exact", head: true }).eq("party_id", id),
   ]);
   // RLS hides parties the user is not part of: same answer as a party that does not exist.
   if (!party || !me) notFound();
   const isHost = party.host_id === user.id;
+  const showLibrary = libraryOpen({ status: party.status, stopLockedAt: me.stop_locked_at, drinksEntered: drinksEntered ?? 0 });
   const card = (userId: string) => cards?.find((c) => c.id === userId);
   const myInvite = participants?.find((p) => p.user_id === user.id)?.invite_status;
   const inParty = new Set(participants?.map((p) => p.user_id));
@@ -164,14 +168,16 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
       <section aria-labelledby="boissons" className="flex flex-col gap-4">
         <h2 id="boissons" className="font-display text-2xl font-bold">Boissons prévues</h2>
         {drinks && drinks.length > 0 ? (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2" aria-label="Liste des boissons prévues">
             {drinks.map((drink) => (
               <li key={drink.id} className="flex items-center justify-between gap-3 rounded-bouton bg-white/5 px-4 py-3">
                 <div>
                   <p className="font-semibold">{drink.kind === "cocktail" ? drink.name : drinkType(drink.drink_type!)?.label}</p>
                   <p className="text-sm text-on-surface-muted">
                     {drink.kind === "cocktail"
-                      ? `Cocktail · ${drink.cocktail_ingredients.length} alcool${drink.cocktail_ingredients.length > 1 ? "s" : ""}`
+                      ? drink.cocktail_ingredients.length === 0
+                        ? "Cocktail"
+                        : `Cocktail · ${drink.cocktail_ingredients.length} alcool${drink.cocktail_ingredients.length > 1 ? "s" : ""}`
                       : `${glassSize(drink.default_glass!)?.label} · ${formatAbv(drink.abv!)}`}
                     {" · "}
                     {Number(drink.ethanol_g) > 0 ? `${formatGrams(Number(drink.ethanol_g))}, ${formatStandardDrinks(Number(drink.ethanol_g))}` : "sans alcool"}
@@ -201,6 +207,12 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
               <summary className="cursor-pointer font-semibold">Ajouter un cocktail</summary>
               <div className="mt-4"><AddCocktailForm partyId={party.id} /></div>
             </details>
+            {showLibrary ? (
+              <details className="rounded-carte bg-white/5 p-4">
+                <summary className="cursor-pointer font-semibold">Idées de recettes</summary>
+                <div className="mt-4"><RecipeLibrary partyId={party.id} /></div>
+              </details>
+            ) : null}
         </>
       </section>
 
