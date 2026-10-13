@@ -1,26 +1,7 @@
 // Critical path « inscription » (cahier des charges) and GDPR rights, against the LOCAL Supabase stack only.
 import { readFile } from "node:fs/promises";
-import { expect, test, type Page } from "@playwright/test";
-import { magicLinkFor } from "./support/mailpit";
-
-function uniqueEmail() {
-  return `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.local`;
-}
-
-async function signIn(page: Page, email: string) {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Oui, j'ai 18 ans ou plus" }).click();
-  await page.getByLabel("Ton adresse e-mail").fill(email);
-  await page.getByRole("button", { name: "Recevoir un lien de connexion" }).click();
-  await expect(page.getByText("Regarde ta boîte mail")).toBeVisible();
-  await page.goto(await magicLinkFor(email));
-}
-
-/** Avatars are visually hidden radios inside a picture label: pick them like a user would, by tapping the label. */
-async function chooseAvatar(page: Page, name: string) {
-  await page.locator("label", { hasText: name }).first().click();
-  await expect(page.getByRole("radio", { name })).toBeChecked();
-}
+import { expect, test } from "@playwright/test";
+import { chooseAvatar, signIn, uniqueEmail } from "./support/account";
 
 test("a signed-out visitor is sent to the sign-in page", async ({ page, request }) => {
   await page.goto("/accueil");
