@@ -132,17 +132,17 @@ delete from public.cocktail_ingredients;
 update public.parties set title = 'Piraté';
 
 select lives_ok(
-  $$ update public.party_participants set objective = 'zero_gdb', meal_kind = 'repas', meal_at = now()
+  $$ update public.participant_private set objective = 'zero_gdb', meal_kind = 'repas', meal_at = now()
      where user_id = '00000000-0000-0000-0000-00000000000b' $$,
   'a guest sets their own objective and meal'
 );
-update public.party_participants set objective = 'festive' where user_id = '00000000-0000-0000-0000-00000000000a';
+update public.participant_private set objective = 'festive' where user_id = '00000000-0000-0000-0000-00000000000a';
 select throws_ok(
   $$ update public.party_participants set share_gauge = true where user_id = '00000000-0000-0000-0000-00000000000b' $$,
   '42501', null, 'gauge sharing cannot be switched on by a plain update (consent flow, lot 8)'
 );
 select throws_ok(
-  $$ update public.party_participants set meal_kind = 'repas', meal_at = null where user_id = '00000000-0000-0000-0000-00000000000b' $$,
+  $$ update public.participant_private set meal_kind = 'repas', meal_at = null where user_id = '00000000-0000-0000-0000-00000000000b' $$,
   '23514', null, 'a meal needs a time'
 );
 
@@ -157,7 +157,7 @@ select lives_ok(
 select is((select count(*) from public.party_drinks)::int, 2, 'and it is gone');
 select is((select title from public.parties), 'Crémaillère', 'the guest could not rename the party');
 select is(
-  (select objective::text from public.party_participants where user_id = '00000000-0000-0000-0000-00000000000a'), null,
+  (select objective::text from public.participant_private where user_id = '00000000-0000-0000-0000-00000000000a'), null,
   'the guest could not change the host''s objective'
 );
 

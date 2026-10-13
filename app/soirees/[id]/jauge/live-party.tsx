@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { AlertCard } from "@/components/alert-card";
 import { BacCurve } from "@/components/bac-curve";
 import { Gauge } from "@/components/gauge";
 import { UpcomingPeak } from "@/components/upcoming-peak";
@@ -8,6 +9,7 @@ import { buttonClass } from "@/components/ui";
 import { ethanolGrams } from "@/lib/bac/dose";
 import type { Pour } from "@/lib/bac/types";
 import { drinkType, glassSize } from "@/lib/bank/catalog";
+import { alertsFor } from "@/lib/party/alerts";
 import { type ParticipantData, toSimulationInput } from "@/lib/party/estimate";
 import { formatGrams, formatStandardDrinks, formatTime } from "@/lib/party/format";
 import { useEstimate } from "@/lib/party/use-estimate";
@@ -140,6 +142,22 @@ export function LiveParty({
     [participant, allConsumptions, now],
   );
   const result = useEstimate(input);
+  const alerts = result ? alertsFor(result, now) : [];
+  // Stop mode as soon as the Stop is reached or announced (P-54): no alcohol is offered any more.
+  const stopped = alerts.some((a) => a.kind === "stop") || Boolean(participant.stopLockedAt);
+
+  // P-54: record the Stop once, so it survives reloads and other devices; the database forbids clearing it.
+  const stopSaved = useRef(Boolean(participant.stopLockedAt));
+  useEffect(() => {
+    if (!result?.stopLocked || stopSaved.current) return;
+    stopSaved.current = true;
+    const reached = result.curve.find((p) => p.gauge >= 0.8)?.t ?? now;
+    void supabase
+      .from("participant_private")
+      .update({ stop_locked_at: new Date(Math.min(reached, now)).toISOString() })
+      .eq("party_id", partyId)
+      .eq("user_id", participant.userId);
+  }, [result, now, supabase, partyId, participant.userId]);
 
   const save = useCallback(
     async (entry: Consumption): Promise<boolean> => {
@@ -246,6 +264,9 @@ export function LiveParty({
 
   return (
     <div className="flex flex-col gap-8 pb-28">
+      {alerts.map((alert) => (
+        <AlertCard key={alert.kind} alert={alert} />
+      ))}
       {result ? (
         <>
           <Gauge level={result.level} p5={result.current.p5} p50={result.current.p50} p95={result.current.p95} />
@@ -260,20 +281,17 @@ export function LiveParty({
         <h2 id="noter" className="font-display text-2xl font-bold">Je note un verre</h2>
         {ordered.length === 0 ? (
           <p className="text-on-surface-muted">Aucune boisson prévue. Ajoute-les depuis la page de la soirée.</p>
+        ) : stopped ? (
+          <>
+            <DrinkGrid drinks={ordered.filter(isAlcoholFree)} onPick={setPicking} />
+            <details className="rounded-carte bg-white/5 p-4">
+              <summary className="cursor-pointer text-sm">Noter quand même un verre d&apos;alcool</summary>
+              <p className="mt-2 mb-3 text-sm text-on-surface-muted">Pour que l&apos;estimation reste juste. Picomètre ne le propose plus ce soir.</p>
+              <DrinkGrid drinks={ordered.filter((d) => !isAlcoholFree(d))} onPick={setPicking} />
+            </details>
+          </>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {ordered.map((drink) => (
-              <button
-                key={drink.id}
-                type="button"
-                onClick={() => setPicking(drink)}
-                className={`min-h-20 rounded-carte p-3 text-left font-semibold ${drink.drink_type === "eau" || drink.drink_type === "soft" ? "bg-menthe text-nuit" : "bg-white/10"}`}
-              >
-                {drinkLabel(drink)}
-                {drink.kind === "cocktail" ? <span className="block text-xs font-normal opacity-80">Cocktail</span> : null}
-              </button>
-            ))}
-          </div>
+          <DrinkGrid drinks={ordered} onPick={setPicking} />
         )}
       </section>
 
@@ -353,6 +371,28 @@ export function LiveParty({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function isAlcoholFree(drink: PlannedDrink) {
+  return drink.kind === "boisson" && Number(drink.abv) === 0;
+}
+
+function DrinkGrid({ drinks, onPick }: { drinks: PlannedDrink[]; onPick: (drink: PlannedDrink) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {drinks.map((drink) => (
+        <button
+          key={drink.id}
+          type="button"
+          onClick={() => onPick(drink)}
+          className={`min-h-20 rounded-carte p-3 text-left font-semibold ${isAlcoholFree(drink) ? "bg-menthe text-nuit" : "bg-white/10"}`}
+        >
+          {drinkLabel(drink)}
+          {drink.kind === "cocktail" ? <span className="block text-xs font-normal opacity-80">Cocktail</span> : null}
+        </button>
+      ))}
     </div>
   );
 }

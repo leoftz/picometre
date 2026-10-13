@@ -7,7 +7,7 @@ import { drinkType, glassSize } from "@/lib/bank/catalog";
 import { enforceOnboarding } from "@/lib/auth/dal";
 import { formatAbv, formatGrams, formatPartyDate, formatStandardDrinks } from "@/lib/party/format";
 import { createClient } from "@/lib/supabase/server";
-import { deleteParty, removePlannedDrink } from "../actions";
+import { deleteParty, endParty, removePlannedDrink } from "../actions";
 import { AddCocktailForm } from "./add-cocktail-form";
 import { AddDrinkForm } from "./add-drink-form";
 import { ParticipationForm } from "./participation-form";
@@ -35,8 +35,8 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
 
   const supabase = await createClient();
   const [{ data: party }, { data: me }, { data: drinks }] = await Promise.all([
-    supabase.from("parties").select("id, title, starts_at, location, host_id").eq("id", id).maybeSingle(),
-    supabase.from("party_participants").select("objective, meal_kind, meal_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("parties").select("id, title, starts_at, location, host_id, status").eq("id", id).maybeSingle(),
+    supabase.from("participant_private").select("objective, meal_kind, meal_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
     supabase
       .from("party_drinks")
       .select("id, kind, drink_type, abv, default_glass, name, ethanol_g, pour, added_by, cocktail_ingredients(drink_type, volume_ml, abv)")
@@ -58,9 +58,21 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
         </p>
       </header>
 
-      <Link href={`/soirees/${party.id}/jauge`} className={buttonClass("primary")}>
-        Ouvrir ma jauge
-      </Link>
+      {party.status === "ended" ? (
+        <div className="flex flex-col gap-3">
+          <p role="status" className="font-semibold">Soirée terminée.</p>
+          <Link href={`/soirees/${party.id}/bilan`} className={buttonClass("primary")}>
+            Voir mon bilan
+          </Link>
+          <Link href={`/soirees/${party.id}/jauge`} className={buttonClass("secondary")}>
+            Ma jauge
+          </Link>
+        </div>
+      ) : (
+        <Link href={`/soirees/${party.id}/jauge`} className={buttonClass("primary")}>
+          Ouvrir ma jauge
+        </Link>
+      )}
 
       <section aria-labelledby="mon-objectif" className="flex flex-col gap-4">
         <h2 id="mon-objectif" className="font-display text-2xl font-bold">Ma soirée</h2>
@@ -115,6 +127,16 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
             </details>
         </>
       </section>
+
+      {isHost && party.status !== "ended" ? (
+        <details className="rounded-carte bg-white/5 p-4">
+          <summary className="cursor-pointer font-semibold">Terminer la soirée</summary>
+          <p className="mt-2 mb-3 text-sm text-on-surface-muted">Chacun pourra voir son bilan. Les jauges restent consultables.</p>
+          <form action={endParty.bind(null, party.id)}>
+            <button type="submit" className={buttonClass("secondary")}>Oui, terminer la soirée</button>
+          </form>
+        </details>
+      ) : null}
 
       {isHost ? (
         <form action={deleteParty.bind(null, party.id)}>

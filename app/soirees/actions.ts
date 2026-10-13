@@ -40,7 +40,7 @@ export async function saveParticipation(partyId: string, _previous: FormState, f
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("party_participants")
+    .from("participant_private")
     .update({ objective: parsed.data.objective, meal_kind: parsed.data.mealKind, meal_at: parsed.data.mealAt })
     .eq("party_id", partyId)
     .eq("user_id", user.id);
@@ -113,4 +113,13 @@ export async function deleteParty(partyId: string): Promise<void> {
   const supabase = await createClient();
   await supabase.from("parties").delete().eq("id", partyId);
   redirect("/accueil");
+}
+
+/** Host only (RLS): ends the party. Everyone can then open their own summary. */
+export async function endParty(partyId: string): Promise<void> {
+  await requireUser();
+  const supabase = await createClient();
+  await supabase.from("parties").update({ status: "ended", ended_at: new Date().toISOString() }).eq("id", partyId);
+  revalidatePath(`/soirees/${partyId}`);
+  redirect(`/soirees/${partyId}/bilan`);
 }
