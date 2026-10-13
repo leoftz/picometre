@@ -5,12 +5,12 @@
 import type { GaugeLevel, Objective } from "@/lib/bac/types";
 
 /**
- * Lower bound (g/L, on the median estimate) of each gauge level — charte §5.
+ * Lower bound (g/L, on the p75 estimate — #P-39) of each gauge level — charte §5.
  * docs/parametres-scientifiques.md#P-40 (1: < 0.2), #P-41 (2: 0.2–0.5), #P-42 (3: 0.5–0.8), #P-43 (4: ≥ 0.8).
  */
 export const LEVEL_FLOORS_G_PER_L: Record<GaugeLevel, number> = { 1: 0, 2: 0.2, 3: 0.5, 4: 0.8 };
 
-/** docs/parametres-scientifiques.md#P-54 — common ceiling: median ≥ 0.8 g/L → « Stop pour ce soir », for the rest of the party. */
+/** docs/parametres-scientifiques.md#P-54 — common ceiling: p75 estimate (#P-39) ≥ 0.8 g/L → « Stop pour ce soir », for the rest of the party. */
 export const STOP_G_PER_L = 0.8;
 
 /** docs/parametres-scientifiques.md#P-55 — gauge level from which a « Pause fraîcheur » is advised (charte §7). */

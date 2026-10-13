@@ -15,6 +15,15 @@ describe("configuration", () => {
   });
 });
 
+describe("gauge estimate — P-39", () => {
+  it("sits between the median and the p95, so the displayed level is never below the median's", () => {
+    const result = simulate(input({ profile: man80, intakes: standardDrinks(5, 25), now: T0 + 5 * HOUR }));
+    expect(result.current.gauge).toBeGreaterThanOrEqual(result.current.p50);
+    expect(result.current.gauge).toBeLessThanOrEqual(result.current.p95);
+    expect(result.level).toBeGreaterThanOrEqual(levelOf(result.current.p50));
+  });
+});
+
 describe("levelOf — charte §5", () => {
   it.each([
     [0, 1],
@@ -95,7 +104,7 @@ describe("« Zéro gueule de bois » cap — P-51, P-57", () => {
 describe("« Stop pour ce soir » — P-54", () => {
   const heavy = input({ profile: woman55, intakes: standardDrinks(6, 10), now: T0 + 2 * HOUR });
 
-  it("triggers when the median reaches 0.8 g/L, with no drink offered", () => {
+  it("triggers when the gauge estimate (p75, P-39) reaches 0.8 g/L, with no drink offered", () => {
     const result = simulate(heavy);
     expect(result.stopLocked).toBe(true);
     expect(result.nextDrinkAt).toBeNull();
@@ -104,7 +113,7 @@ describe("« Stop pour ce soir » — P-54", () => {
 
   it("stays for the rest of the party, even once the gauge is back down", () => {
     const later = simulate({ ...heavy, now: T0 + 10 * HOUR });
-    expect(later.level).toBe(1);
+    expect(later.level).toBeLessThan(4);
     expect(later.stopLocked).toBe(true);
     expect(later.nextDrinkAt).toBeNull();
   });

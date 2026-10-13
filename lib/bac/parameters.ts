@@ -87,6 +87,12 @@ export const WEIGHT_CV = 0.05;
 /** docs/parametres-scientifiques.md#P-35 — restituted percentiles. */
 export const PERCENTILES = { low: 0.05, median: 0.5, high: 0.95 } as const;
 
+/**
+ * docs/parametres-scientifiques.md#P-39 — percentile used for the displayed gauge level and the Stop (hors PDF):
+ * slightly above the median, because the median falls faster than the PDF figure on the way down.
+ */
+export const GAUGE_PERCENTILE = 0.75;
+
 /** docs/parametres-scientifiques.md#P-36 — Monte Carlo draws (choix technique). */
 export const MONTE_CARLO_DRAWS = 1000;
 

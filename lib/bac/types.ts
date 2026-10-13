@@ -40,6 +40,8 @@ export interface Range {
 
 export interface CurvePoint extends Range {
   t: number;
+  /** Percentile 75: the estimate behind the gauge level and the Stop (docs/parametres-scientifiques.md#P-39). */
+  gauge: number;
 }
 
 export type Alert = "stop" | "pause" | "next" | "cap";
@@ -62,9 +64,9 @@ export interface SimulationInput {
 
 export interface SimulationResult {
   curve: CurvePoint[];
-  /** Estimate at `now`. */
-  current: Range;
-  /** Gauge level of the median estimate at `now` (charte §5). */
+  /** Estimate at `now`, with the p75 used for the gauge. */
+  current: Range & { gauge: number };
+  /** Gauge level of the p75 estimate at `now` (charte §5, P-39). */
   level: GaugeLevel;
   peak: Range & { at: number };
   /** Times at which each percentile curve drops below the landmark after the peak; null if never above it. */

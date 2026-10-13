@@ -17,6 +17,7 @@ import {
   trajectory,
 } from "./model";
 import {
+  GAUGE_PERCENTILE,
   HORIZON_AFTER_LAST_DRINK_H,
   LANDMARKS_G_PER_L,
   MONTE_CARLO_DRAWS,
@@ -37,14 +38,17 @@ function percentileOfSorted(sorted: Float64Array, q: number): number {
   return sorted[lower]! + (sorted[upper]! - sorted[lower]!) * (position - lower);
 }
 
-function rangeOf(values: Float64Array): Range {
+function rangeOf(values: Float64Array): Range & { gauge: number } {
   const sorted = Float64Array.from(values).sort();
   return {
     p5: percentileOfSorted(sorted, PERCENTILES.low),
     p50: percentileOfSorted(sorted, PERCENTILES.median),
     p95: percentileOfSorted(sorted, PERCENTILES.high),
+    gauge: percentileOfSorted(sorted, GAUGE_PERCENTILE),
   };
 }
+
+const pick = ({ p5, p50, p95 }: Range): Range => ({ p5, p50, p95 });
 
 /** Gauge level of a concentration (charte §5, docs/parametres-scientifiques.md#P-40 to #P-43). */
 export function levelOf(gramsPerLiter: number): GaugeLevel {
@@ -170,8 +174,8 @@ export function simulate(input: SimulationInput): SimulationResult {
   trajectories.forEach((c, i) => (peaks[i] = c.reduce((max, v) => Math.max(max, v), 0)));
   const peakPoint = curve.reduce((best, p) => (p.p50 > best.p50 ? p : best), curve[0]!);
 
-  // P-54: Stop once the median has reached the ceiling at any time up to now, for the rest of the party.
-  const reachedStop = curve.slice(0, nowStep + 1).some((p) => p.p50 >= STOP_G_PER_L);
+  // P-54, P-39: Stop once the gauge estimate has reached the ceiling at any time up to now, for the rest of the party.
+  const reachedStop = curve.slice(0, nowStep + 1).some((p) => p.gauge >= STOP_G_PER_L);
   const stopLocked = Boolean(input.stopLockedAt) || reachedStop;
 
   const totalGrams = input.intakes.reduce((sum, i) => sum + i.grams, 0);
@@ -179,7 +183,7 @@ export function simulate(input: SimulationInput): SimulationResult {
   const capReached = capGrams !== null && totalGrams + NEXT_DRINK_GRAMS > capGrams;
 
   const nextDrinkAt = stopLocked || capReached ? null : findNextDrink(input, prepared, snapshots);
-  const level = levelOf(current.p50);
+  const level = levelOf(current.gauge);
 
   const alerts: Alert[] = [];
   if (stopLocked) alerts.push("stop");
@@ -191,9 +195,9 @@ export function simulate(input: SimulationInput): SimulationResult {
 
   return {
     curve,
-    current: { p5: current.p5, p50: current.p50, p95: current.p95 },
+    current: { p5: current.p5, p50: current.p50, p95: current.p95, gauge: current.gauge },
     level,
-    peak: { ...rangeOf(peaks), at: peakPoint.t },
+    peak: { ...pick(rangeOf(peaks)), at: peakPoint.t },
     below05: crossingRange(curve, LANDMARKS_G_PER_L.haut),
     below02: crossingRange(curve, LANDMARKS_G_PER_L.bas),
     backToZero: crossingRange(curve, ZERO_G_PER_L),

@@ -192,6 +192,7 @@ Choix de P-23 : appliquer un β « chronique » ferait baisser l'estimation, don
 | <a id="P-36"></a>P-36 | Nombre de tirages Monte Carlo | 1 000 tirages, graine fixe par participant et par soirée, pour que la courbe reste stable à l'affichage | — | — | ⚠️ Hors PDF (choix technique) |
 | <a id="P-37"></a>P-37 | Sorties calculées | Pic (valeur et heure), heure de passage sous 0,5 g/L et sous 0,2 g/L, heure de retour à zéro, chacune avec sa fourchette | Sorties, p. 5 | — | ✅ PDF |
 | <a id="P-38"></a>P-38 | Seuil de « retour à zéro » | C < **0,01 g/L** | Absent | — | ⚠️ Hors PDF — à valider |
+| <a id="P-39"></a>P-39 | Estimation utilisée pour la jauge et le Stop | **Percentile 75** de la courbe. La courbe affichée reste la médiane (p50), avec sa fourchette p5–p95 | Absent. Choix validé le 13/10/2026 (option « c » de la PR #2) : en phase de descente, la médiane du moteur passe sous la figure p. 6 (jusqu'à −30 % vers 5 h). Le p75 compense sans modifier les paramètres du PDF | — | ⚠️ Hors PDF — validé |
 
 Note sur P-37 : les seuils de 0,5 et 0,2 g/L sont aussi des seuils de conduite (p. 8). L'app les utilise **uniquement comme repères de jauge** (§6). Elle ne les présente jamais comme liés à la conduite.
 
@@ -199,14 +200,14 @@ Note sur P-37 : les seuils de 0,5 et 0,2 g/L sont aussi des seuils de conduite (
 
 ### 6.1 Niveaux de jauge (charte §5, non négociables)
 
-| ID | Niveau | Plage (sur l'estimation médiane p50) | Libellé | Couleur | Lien avec le PDF |
+| ID | Niveau | Plage (sur l'estimation p75, P-39) | Libellé | Couleur | Lien avec le PDF |
 |---|---|---|---|---|---|
 | <a id="P-40"></a>P-40 | 1 — Frais | < 0,2 g/L | « Frais comme un gardon » | `#3DDC97` | 0,2 = Cs (P-27), fin de la saturation enzymatique |
 | <a id="P-41"></a>P-41 | 2 — Pétillant | 0,2 à < 0,5 g/L | « Ça pétille » | `#FFD23F` | 0,5 = repère opérationnel gueule de bois (P-45) |
 | <a id="P-42"></a>P-42 | 3 — Ça chauffe | 0,5 à < 0,8 g/L | « La jauge chauffe » | `#FF9F1C` | — |
 | <a id="P-43"></a>P-43 | 4 — Stop | ≥ 0,8 g/L | « Pause obligatoire » | `#E63946` | Plafond commun du cahier des charges |
 
-Statut : 🎨 Charte pour les quatre niveaux. Le niveau affiché utilise la médiane (p50), toujours accompagnée de sa fourchette p5–p95.
+Statut : 🎨 Charte pour les quatre niveaux. Le niveau affiché utilise le percentile 75 (P-39). La valeur affichée reste la médiane (p50), toujours accompagnée de sa fourchette p5–p95.
 
 ### 6.2 Repères du PDF utilisés pour les objectifs
 
@@ -234,8 +235,8 @@ Règle commune pour le prochain verre (cahier des charges) : c'est le premier in
 
 | ID | Alerte | Déclencheur proposé | Source | Statut |
 |---|---|---|---|---|
-| <a id="P-54"></a>P-54 | « Stop pour ce soir » (plafond commun) | p50 ≥ 0,8 g/L. **L'état est définitif pour la soirée** : plus aucune proposition de verre d'alcool, même quand la jauge redescend | Cahier des charges ; charte §9, règle 4 | 🎨 Charte (verrouillage définitif : ⚠️ à valider) |
-| <a id="P-55"></a>P-55 | « Pause fraîcheur conseillée » | p50 entre dans le niveau 3, ou le prochain verre n'est pas encore possible | Charte §7 (jauge) | 🎨 Charte |
+| <a id="P-54"></a>P-54 | « Stop pour ce soir » (plafond commun) | Estimation p75 (P-39) ≥ 0,8 g/L. **L'état est définitif pour la soirée** : plus aucune proposition de verre d'alcool, même quand la jauge redescend | Cahier des charges ; charte §9, règle 4 | 🎨 Charte (verrouillage définitif : ⚠️ à valider) |
+| <a id="P-55"></a>P-55 | « Pause fraîcheur conseillée » | La jauge (p75, P-39) entre dans le niveau 3, ou le prochain verre n'est pas encore possible | Charte §7 (jauge) | 🎨 Charte |
 | <a id="P-56"></a>P-56 | « Prochain verre possible à partir de HH:MM » | Règle de 6.3. Message purement informatif, jamais incitatif | Cahier des charges ; charte §9, règle 1 | 🎨 Charte |
 | <a id="P-57"></a>P-57 | Plafond de verres atteint (« Zéro gueule de bois ») | Total ≥ P-51 : affiche « Objectif atteint, place au joker eau » | P-51 | ⚠️ à valider |
 
