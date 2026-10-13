@@ -110,7 +110,7 @@ Toutes les tables sont en `public`, avec RLS **activée et forcée**. Les clés 
 | `party_drinks` | `id`, `party_id`, `drink_type_id`, `label` (facultatif, générique), `abv` (borné à la plage du type, par contrainte CHECK et trigger), `default_glass_id`, `pour` (`dose`/`oeil`) | Boissons prévues pour la soirée, choisies dans la banque. Sans marque (loi Évin) |
 | `cocktail_ingredients` | `id`, `party_drink_id`, `drink_type_id`, `volume_ml`, `abv` | Un cocktail est une recette d'ingrédients tirés de la banque. `ethanol_g` recalculé par trigger (P-01, P-03) |
 | `consumptions` | `id`, `party_id`, `user_id`, `party_drink_id`, `glass_size_id`, `volume_ml`, `abv`, `ethanol_g` (**figés au moment de la saisie**), `consumed_at`, `client_id` (idempotence hors ligne) | Visible par son propriétaire seulement. Volume et degré sont recopiés pour que l'historique ne change jamais |
-| `gauge_shares` | `party_id`, `user_id`, `level` (1 à 4), `schedule` (jsonb : `[{at, level}]`), `computed_at` | Publiée dans Realtime. **Aucune valeur en g/L** |
+| `gauge_shares` | `id` (aléatoire), `party_id`, `user_id`, `level` (1 à 4), `schedule` (jsonb : `[{at, level}]`, 48 entrées max), `stopped`, `computed_at` | Publiée dans Realtime. **Aucune valeur en g/L**. L'`id` est aléatoire car Realtime diffuse les suppressions à tous les abonnés, sans RLS, avec la seule clé primaire (lot 8). Le consentement `gauge_sharing` pilote `share_gauge` ; sa révocation ou le départ de la soirée efface la ligne |
 | `trophies` | `id`, `party_id`, `user_id`, `kind` (`capitaine`/`joker_eau`/`atterrissage`), `awarded_at` | Lot 9 |
 
 ### Politiques RLS
@@ -129,7 +129,7 @@ Deux fonctions `security definer` (avec `search_path` fixé) servent de briques 
 | `drink_types`, `glass_sizes`, `drink_type_glasses` | Tout utilisateur authentifié | Aucune écriture côté client. Modification uniquement par migration |
 | `party_drinks`, `cocktail_ingredients` | Les membres | INSERT par tout membre, en son propre nom (`added_by`). UPDATE et DELETE par l'auteur ou l'hôte (Q-12) |
 | `consumptions`, `participant_private` | **Soi-même uniquement** | Soi-même, et seulement si l'on est membre de la soirée |
-| `gauge_shares` | Soi-même, ou un membre de la soirée **si** `share_gauge = true` pour cette ligne | UPSERT par soi-même uniquement, seulement si `share_gauge = true` |
+| `gauge_shares` | Soi-même, ou un membre **accepté** de la soirée **si** `share_gauge = true` pour cette ligne | INSERT et UPDATE par soi-même uniquement, seulement si `share_gauge = true`. `share_gauge` ne s'écrit pas directement : seul le consentement le change |
 | `trophies` | Les membres de la soirée | Attribution par une RPC `security definer` en fin de soirée, jamais par écriture directe |
 
 **Tests RLS (exigés pour chaque lot) :** des tests SQL avec pgTAP (`supabase test db`) sur la stack locale. On crée trois utilisateurs (A, B ami de A, C inconnu) et on vérifie :
@@ -257,7 +257,7 @@ Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes
 - **Q-3** — Au niveau 3, la charte (§9, règle 4) dit « plus de carte gorgées ». Pour l'objectif « Soirée festive », on continue d'afficher l'heure du prochain verre au niveau 3, accompagnée de « Pause fraîcheur conseillée » ? Ou bien on ne l'affiche plus du tout à partir du niveau 3 ?
 - **Q-4** — Le trophée « **Roi** du joker eau » est genré : on le renomme « **Pro** du joker eau » ou « **As** du joker eau » ?
 - **Q-5** — Le trophée « Capitaine de soirée » (jauge la plus basse) ne concerne que les participants qui partagent leur jauge. Est-ce que ça te convient ?
-- **Q-6** — Vue groupe : on montre uniquement le niveau (libellé, couleur, icône), jamais de valeur en g/L. Est-ce que ça te convient ?
+- ✅ **Q-6** — Vue groupe : uniquement le niveau (libellé, couleur, icône) et un éventuel Stop, jamais de valeur en g/L ni les verres. Ordre alphabétique, jamais de classement (décision du 13/10/2026, lot 8).
 - **Q-7** — Variant ALDH2 : on affiche un message générique (N-1) sans rien collecter ?
 
 ### RGPD et exploitation

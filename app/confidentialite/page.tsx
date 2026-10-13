@@ -33,8 +33,13 @@ export default function Privacy() {
         <section>
           <h2>Qui y a accès</h2>
           <p>
-            Toi seul. Tes données de santé ne sont jamais montrées à tes amis. Rien n&apos;est vendu, rien ne sert à de la
-            publicité.
+            Toi seul. Tes données de santé et tes verres ne sont jamais montrés à tes amis. Rien n&apos;est vendu, rien ne
+            sert à de la publicité.
+          </p>
+          <p>
+            Tes amis et les participants de tes soirées voient ton pseudo et ton avatar. Si tu l&apos;acceptes pour une
+            soirée, ils voient aussi ton niveau de jauge (jamais de valeur en g/L) et un éventuel Stop. Tu peux arrêter à tout
+            moment : ce qui était partagé est effacé aussitôt.
           </p>
         </section>
         <section>

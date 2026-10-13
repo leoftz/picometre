@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { SharingControl } from "@/components/sharing-control";
 import { Loading, PageShell, buttonClass } from "@/components/ui";
 import type { AvatarId } from "@/lib/account/avatars";
 import { drinkType, glassSize } from "@/lib/bank/catalog";
@@ -44,7 +45,7 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
       .select("id, kind, drink_type, abv, default_glass, name, ethanol_g, pour, added_by, cocktail_ingredients(drink_type, volume_ml, abv)")
       .eq("party_id", id)
       .order("created_at"),
-    supabase.from("party_participants").select("user_id, role, invite_status").eq("party_id", id).order("role"),
+    supabase.from("party_participants").select("user_id, role, invite_status, share_gauge").eq("party_id", id).order("role"),
     supabase.from("profile_cards").select("id, pseudo, avatar"),
     supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted"),
   ]);
@@ -109,6 +110,9 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
           mealAt={me.meal_at}
           defaultMealAt={party.starts_at}
         />
+        {myInvite === "accepted" && party.status !== "ended" ? (
+          <SharingControl partyId={party.id} sharing={participants?.find((p) => p.user_id === user.id)?.share_gauge ?? false} />
+        ) : null}
       </section>
 
       <section aria-labelledby="participants" className="flex flex-col gap-4">
