@@ -8,15 +8,19 @@ Les étapes ci-dessous se font **dans les dashboards**, par toi. Aucune clé ni 
 - Je les reporte dans `config/legal.ts`. Ils s'affichent dans les mentions légales, la politique de confidentialité et les conditions d'utilisation.
 - **Tant que ce n'est pas fait, le build de production sur Vercel échoue volontairement** (`next.config.ts`), pour qu'aucune version sans mentions légales ne soit publiée.
 
-## 2. E-mails de connexion : SMTP dédié (Q-9) — bloquant
+## 2. E-mails de connexion — reporté (Q-9, option C)
 
-Le service d'e-mail intégré à Supabase n'envoie que quelques e-mails par heure : impossible d'ouvrir l'inscription avec.
+**Décision du 13/10/2026 : ouverture avec Google seulement.** Le lien magique est masqué en production : `NEXT_PUBLIC_MAGIC_LINK` n'est pas défini sur Vercel. Il reste actif en local et en CI, pour les tests.
 
-- [ ] Choisir un fournisseur. Recommandé : **Brevo** (société française, données en UE). Alternative : Resend (région UE).
-- [ ] Il faut un **nom de domaine** à toi pour l'expéditeur (ex. `connexion@picometre.fr`), avec les enregistrements SPF et DKIM fournis par le fournisseur. Sans domaine, les e-mails finissent en spam.
-- [ ] Supabase → **Authentication → Emails → SMTP Settings** : activer « Custom SMTP », saisir hôte, port, identifiant et mot de passe **toi-même dans le dashboard**. Expéditeur : `Picomètre`.
-- [ ] Supabase → **Authentication → Rate Limits** : relever la limite d'e-mails à 30 par heure ou plus (selon ton offre SMTP).
-- [ ] Supabase → **Authentication → Emails → Templates** : coller `supabase/templates/magic_link.html` dans « Magic Link » (objet « Ton lien de connexion à Picomètre ») et `supabase/templates/confirmation.html` dans « Confirm signup » (objet « Bienvenue sur Picomètre : confirme ton adresse »).
+- [ ] Supabase → **Authentication → Sign In / Providers → Email** : **désactiver** le fournisseur Email. Sinon, n'importe qui pourrait demander un lien directement à l'API Supabase, et le SMTP intégré, très limité, serait utilisé.
+
+**Plus tard, pour activer le lien magique :**
+1. Un **nom de domaine** à toi (ex. `picometre.fr`) et un fournisseur SMTP (recommandé : **Brevo**, société française). Ajouter chez ton registrar les enregistrements SPF et DKIM qu'il fournit.
+2. Supabase → **Authentication → Emails → SMTP Settings** : activer « Custom SMTP », saisir hôte, port, identifiant et mot de passe **toi-même dans le dashboard**. Expéditeur : `Picomètre`.
+3. Supabase → **Authentication → Rate Limits** : relever la limite d'e-mails (30 par heure ou plus).
+4. Supabase → **Authentication → Emails → Templates** : coller `supabase/templates/magic_link.html` dans « Magic Link » (objet « Ton lien de connexion à Picomètre ») et `supabase/templates/confirmation.html` dans « Confirm signup » (objet « Bienvenue sur Picomètre : confirme ton adresse »).
+5. Réactiver le fournisseur **Email** dans Supabase.
+6. Vercel → **Environment Variables** : ajouter `NEXT_PUBLIC_MAGIC_LINK` = `true` (Production et Preview), puis redéployer.
 
 ## 3. Connexion Google — bloquant pour le grand public
 

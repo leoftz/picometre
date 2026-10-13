@@ -262,7 +262,7 @@ Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes
 
 ### RGPD et exploitation
 - **Q-8** — Durée de conservation : on supprime automatiquement le détail des consommations **90 jours** après la fin de la soirée, en ne gardant que le bilan ? Ou une autre durée ?
-- **Q-9** — SMTP dédié pour les magic links (Brevo, entreprise française, ou Resend en région UE) : lequel, et à partir de quand ?
+- ✅ **Q-9** — Ouverture avec **Google seulement** (option C, 13/10/2026). Le lien magique est masqué tant que `NEXT_PUBLIC_MAGIC_LINK` n'est pas défini en production ; SMTP dédié (Brevo recommandé, domaine requis) à prévoir plus tard, procédure dans `docs/mise-en-ligne.md`.
 - **Q-10** — Boissons prévues : liste fermée de types génériques, ou libellé libre (avec un risque de noms de marques) ?
 - ✅ **Q-11** — Éditeur et responsable du traitement : Léo Fritz, en nom propre (`config/legal.ts`). Décision du 13/10/2026, lot 10.
 - ✅ **Q-12** — Chaque membre ajoute ses propres boissons et cocktails, et peut les modifier ou les retirer. L'hôte gère toutes les boissons (décision du 13/10/2026, migration `private_party_helpers`).
