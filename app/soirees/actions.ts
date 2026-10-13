@@ -40,7 +40,7 @@ export async function saveParticipation(partyId: string, _previous: FormState, f
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("party_participants")
+    .from("participant_private")
     .update({ objective: parsed.data.objective, meal_kind: parsed.data.mealKind, meal_at: parsed.data.mealAt })
     .eq("party_id", partyId)
     .eq("user_id", user.id);

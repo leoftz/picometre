@@ -36,7 +36,7 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
   const supabase = await createClient();
   const [{ data: party }, { data: me }, { data: drinks }] = await Promise.all([
     supabase.from("parties").select("id, title, starts_at, location, host_id").eq("id", id).maybeSingle(),
-    supabase.from("party_participants").select("objective, meal_kind, meal_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("participant_private").select("objective, meal_kind, meal_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
     supabase
       .from("party_drinks")
       .select("id, kind, drink_type, abv, default_glass, name, ethanol_g, pour, added_by, cocktail_ingredients(drink_type, volume_ml, abv)")
