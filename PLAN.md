@@ -264,7 +264,7 @@ Le **MVP** couvre L1 à L6 : profil → soirée → saisie → jauge → alertes
 - **Q-8** — Durée de conservation : on supprime automatiquement le détail des consommations **90 jours** après la fin de la soirée, en ne gardant que le bilan ? Ou une autre durée ?
 - **Q-9** — SMTP dédié pour les magic links (Brevo, entreprise française, ou Resend en région UE) : lequel, et à partir de quand ?
 - **Q-10** — Boissons prévues : liste fermée de types génériques, ou libellé libre (avec un risque de noms de marques) ?
-- **Q-11** — Éditeur et hébergeur pour les mentions légales : qui est le responsable du traitement (toi en nom propre, ou une structure) ?
+- ✅ **Q-11** — Éditeur et responsable du traitement : Léo Fritz, en nom propre (`config/legal.ts`). Décision du 13/10/2026, lot 10.
 - ✅ **Q-12** — Chaque membre ajoute ses propres boissons et cocktails, et peut les modifier ou les retirer. L'hôte gère toutes les boissons (décision du 13/10/2026, migration `private_party_helpers`).
 
 ### Banque de verres — tranchées le 13/10/2026
