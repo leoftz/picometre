@@ -161,6 +161,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"participant_private": {
+                  Row: {
+                    "meal_at": string | null,"meal_kind": Database["public"]['Enums']["meal_kind"] | null,"objective": Database["public"]['Enums']["party_objective"] | null,"party_id": string,"stop_locked_at": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "meal_at"?: string | null,"meal_kind"?: Database["public"]['Enums']["meal_kind"] | null,"objective"?: Database["public"]['Enums']["party_objective"] | null,"party_id": string,"stop_locked_at"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "meal_at"?: string | null,"meal_kind"?: Database["public"]['Enums']["meal_kind"] | null,"objective"?: Database["public"]['Enums']["party_objective"] | null,"party_id"?: string,"stop_locked_at"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "participant_private_party_id_user_id_fkey"
+      columns: ["party_id","user_id"]
+isOneToOne: true
+      referencedRelation: "party_participants"
+      referencedColumns: ["party_id","user_id"]
+    }
+                  ]
                 },"parties": {
                   Row: {
                     "created_at": string,"ended_at": string | null,"host_id": string,"id": string,"location": string | null,"starts_at": string,"status": Database["public"]['Enums']["party_status"],"title": string
@@ -221,14 +241,14 @@ isOneToOne: false
                   ]
                 },"party_participants": {
                   Row: {
-                    "invite_status": Database["public"]['Enums']["invite_status"],"joined_at": string | null,"meal_at": string | null,"meal_kind": Database["public"]['Enums']["meal_kind"] | null,"objective": Database["public"]['Enums']["party_objective"] | null,"party_id": string,"role": Database["public"]['Enums']["participant_role"],"share_gauge": boolean,"stop_locked_at": string | null,"user_id": string
+                    "invite_status": Database["public"]['Enums']["invite_status"],"joined_at": string | null,"party_id": string,"role": Database["public"]['Enums']["participant_role"],"share_gauge": boolean,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "invite_status"?: Database["public"]['Enums']["invite_status"],"joined_at"?: string | null,"meal_at"?: string | null,"meal_kind"?: Database["public"]['Enums']["meal_kind"] | null,"objective"?: Database["public"]['Enums']["party_objective"] | null,"party_id": string,"role"?: Database["public"]['Enums']["participant_role"],"share_gauge"?: boolean,"stop_locked_at"?: string | null,"user_id": string
+                    "invite_status"?: Database["public"]['Enums']["invite_status"],"joined_at"?: string | null,"party_id": string,"role"?: Database["public"]['Enums']["participant_role"],"share_gauge"?: boolean,"user_id": string
                   }
                   Update: {
-                    "invite_status"?: Database["public"]['Enums']["invite_status"],"joined_at"?: string | null,"meal_at"?: string | null,"meal_kind"?: Database["public"]['Enums']["meal_kind"] | null,"objective"?: Database["public"]['Enums']["party_objective"] | null,"party_id"?: string,"role"?: Database["public"]['Enums']["participant_role"],"share_gauge"?: boolean,"stop_locked_at"?: string | null,"user_id"?: string
+                    "invite_status"?: Database["public"]['Enums']["invite_status"],"joined_at"?: string | null,"party_id"?: string,"role"?: Database["public"]['Enums']["participant_role"],"share_gauge"?: boolean,"user_id"?: string
                   }
                   Relationships: [
                     {
