@@ -16,7 +16,8 @@ export const metadata: Metadata = { title: "Soirée" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// E7–E9 — a party: my objective and meal, and the planned drinks (managed by the host).
+// E7–E9 — a party: my objective and meal, and the planned drinks. Every member adds their own
+// drinks; the author or the host can remove them (PLAN Q-12).
 export default function Party({ params }: PageProps<"/soirees/[id]">) {
   return (
     <PageShell>
@@ -38,7 +39,7 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
     supabase.from("party_participants").select("objective, meal_kind, meal_at").eq("party_id", id).eq("user_id", user.id).maybeSingle(),
     supabase
       .from("party_drinks")
-      .select("id, kind, drink_type, abv, default_glass, name, ethanol_g, pour, cocktail_ingredients(drink_type, volume_ml, abv)")
+      .select("id, kind, drink_type, abv, default_glass, name, ethanol_g, pour, added_by, cocktail_ingredients(drink_type, volume_ml, abv)")
       .eq("party_id", id)
       .order("created_at"),
   ]);
@@ -85,7 +86,7 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
                     {drink.pour === "oeil" ? " · à l'œil" : ""}
                   </p>
                 </div>
-                {isHost ? (
+                {isHost || drink.added_by === user.id ? (
                   <form action={removePlannedDrink.bind(null, party.id, drink.id)}>
                     <button type="submit" className="text-sm underline" aria-label={`Retirer ${drink.kind === "cocktail" ? drink.name : drinkType(drink.drink_type!)?.label}`}>
                       Retirer
@@ -99,8 +100,7 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
           <p className="text-on-surface-muted">Rien de prévu pour l&apos;instant. Pense à l&apos;eau et aux softs.</p>
         )}
 
-        {isHost ? (
-          <>
+        <>
             <details className="rounded-carte bg-white/5 p-4">
               <summary className="cursor-pointer font-semibold">Ajouter une boisson</summary>
               <div className="mt-4"><AddDrinkForm partyId={party.id} /></div>
@@ -109,8 +109,7 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
               <summary className="cursor-pointer font-semibold">Ajouter un cocktail</summary>
               <div className="mt-4"><AddCocktailForm partyId={party.id} /></div>
             </details>
-          </>
-        ) : null}
+        </>
       </section>
 
       {isHost ? (
