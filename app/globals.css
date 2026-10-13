@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/* Design tokens — mirror of lib/brand/tokens.ts (charte §5 and §6). */
+@theme {
+  --color-nuit: #1B1F3B;
+  --color-corail: #FF5A5F;
+  --color-citron: #FFD23F;
+  --color-menthe: #3DDC97;
+  --color-creme: #FFF8F0;
+  --color-ardoise: #4A4E69;
+  --color-violet: #7B5CFF;
+  --color-brume: #BBB7BA;
+
+  --color-jauge-1: #3DDC97;
+  --color-jauge-2: #FFD23F;
+  --color-jauge-3: #FF9F1C;
+  --color-jauge-4: #E63946;
+
+  --font-display: var(--font-baloo), "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --radius-carte: 24px;
+  --radius-bouton: 16px;
+}
+
+/* Dark mode by default (charte §8); light mode via data-theme="light" on <html>. */
+:root {
+  --surface: var(--color-nuit);
+  --on-surface: var(--color-creme);
+  --on-surface-muted: var(--color-brume);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --surface: var(--color-creme);
+  --on-surface: var(--color-nuit);
+  --on-surface-muted: var(--color-ardoise);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-muted: var(--on-surface-muted);
+}
+
+body {
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
