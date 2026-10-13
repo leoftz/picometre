@@ -114,3 +114,12 @@ export async function deleteParty(partyId: string): Promise<void> {
   await supabase.from("parties").delete().eq("id", partyId);
   redirect("/accueil");
 }
+
+/** Host only (RLS): ends the party. Everyone can then open their own summary. */
+export async function endParty(partyId: string): Promise<void> {
+  await requireUser();
+  const supabase = await createClient();
+  await supabase.from("parties").update({ status: "ended", ended_at: new Date().toISOString() }).eq("id", partyId);
+  revalidatePath(`/soirees/${partyId}`);
+  redirect(`/soirees/${partyId}/bilan`);
+}
