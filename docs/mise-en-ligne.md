@@ -22,14 +22,12 @@ Les étapes ci-dessous se font **dans les dashboards**, par toi. Aucune clé ni 
 5. Réactiver le fournisseur **Email** dans Supabase.
 6. Vercel → **Environment Variables** : ajouter `NEXT_PUBLIC_MAGIC_LINK` = `true` (Production et Preview), puis redéployer.
 
-## 3. Connexion Google — bloquant pour le grand public
+## 3. Connexion Google — mode test (décision du 13/10/2026)
 
-- [ ] Google Cloud Console → **Google Auth Platform → Audience** : passer l'application de « Testing » à **« In production »**. Les scopes utilisés (`openid`, `email`, `profile`) ne demandent pas de vérification approfondie.
-- [ ] **Branding** : nom « Picomètre », e-mail d'assistance, logo (`public/icons/icon-512.png`), et les liens :
-  - page d'accueil : `https://picometre.vercel.app` (ou ton domaine) ;
-  - politique de confidentialité : `…/confidentialite` ;
-  - conditions d'utilisation : `…/conditions`.
-- [ ] **Domaines autorisés** : `picometre.vercel.app` (et ton domaine si tu en ajoutes un).
+L'application Google reste en mode **« Testing »** : c'est une bêta fermée.
+
+- [ ] Ajouter chaque personne autorisée (son adresse Gmail) dans [Audience → Test users](https://console.cloud.google.com/auth/audience). Maximum 100. Les autres voient « Accès bloqué ».
+- Pour ouvrir au public plus tard : sur la même page, bouton **« Publish app »**, puis renseigner [Branding](https://console.cloud.google.com/auth/branding) (nom, logo `public/icons/icon-512.png`, liens vers l'accueil, `/confidentialite` et `/conditions`, domaine `picometre.vercel.app`).
 
 ## 4. Supabase
 
