@@ -37,8 +37,15 @@ export function GroupView({ partyId, myId, members, initialShares }: { partyId: 
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
+    const tick = () => {
+      if (document.visibilityState === "visible") setNow(Date.now());
+    };
+    const timer = setInterval(tick, 30_000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, []);
 
   useEffect(() => {
@@ -76,8 +83,14 @@ export function GroupView({ partyId, myId, members, initialShares }: { partyId: 
       }),
     );
     const timer = setInterval(resync, 60_000);
+    // Back from the background: the connection may have dropped while the phone slept.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void resync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(channel);
     };
   }, [supabase, partyId]);

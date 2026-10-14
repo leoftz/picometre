@@ -42,6 +42,7 @@ export interface Consumption {
 type Choice = { glass: string | null; portion: number; label: string; grams: number };
 
 const UNDO_MS = 10_000;
+const TICK_MS = 30_000;
 const COLUMNS = "id, party_drink_id, label, glass_size, portion, consumed_at, ethanol_g, pour";
 
 function drinkLabel(drink: PlannedDrink) {
@@ -122,11 +123,64 @@ export function LiveParty({
   const [undo, setUndo] = useState<{ id: string; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // The estimate moves with time: refresh every minute.
+  // The estimate moves with time: refresh every 30 seconds, and at once when the phone wakes up or the app
+  // comes back to the foreground (timers are paused or throttled in the background).
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(timer);
+    const tick = () => {
+      if (document.visibilityState === "visible") setNow(Date.now());
+    };
+    const timer = setInterval(tick, TICK_MS);
+    document.addEventListener("visibilitychange", tick);
+    window.addEventListener("focus", tick);
+    window.addEventListener("pageshow", tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+      window.removeEventListener("focus", tick);
+      window.removeEventListener("pageshow", tick);
+    };
   }, []);
+
+  // Drinks entered or removed on another device show up here live (Realtime, own rows only through RLS).
+  // Read them again whenever the channel is ready or the app comes back, as a sleeping phone may have
+  // missed events.
+  useEffect(() => {
+    const toConsumption = (row: Record<string, unknown>) =>
+      ({ ...row, ethanol_g: Number(row.ethanol_g), portion: Number(row.portion) }) as Consumption;
+    const resync = async () => {
+      const { data } = await supabase.from("consumptions").select(COLUMNS).eq("party_id", partyId).order("consumed_at");
+      if (!data) return;
+      // Keep entries still being saved from this device: they are not in the database yet.
+      setConsumptions((list) => [...data.map(toConsumption), ...list.filter((c) => c.pending && !data.some((d) => d.id === c.id))]);
+    };
+    const channel = supabase
+      .channel(`consumptions:${partyId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "consumptions", filter: `party_id=eq.${partyId}` }, (payload) => {
+        const row = toConsumption(payload.new);
+        setConsumptions((list) => [...list.filter((c) => c.id !== row.id), row]);
+      })
+      // Deletions carry only the id, which is random: drop it if it is one of ours.
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "consumptions" }, (payload) => {
+        const id = (payload.old as { id?: string }).id;
+        setConsumptions((list) => list.filter((c) => c.id !== id));
+      })
+      .on("system", {}, (payload: { extension?: string; status?: string }) => {
+        if (payload.extension === "postgres_changes" && payload.status === "ok") void resync();
+      });
+    void supabase.realtime.setAuth().then(() =>
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") void resync();
+      }),
+    );
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void resync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [supabase, partyId]);
 
   const queueRaw = useSyncExternalStore(subscribeQueue, () => readQueueRaw(partyId), () => "[]");
   // Saved drinks plus those still waiting for the network (offline entries from this or an earlier visit).

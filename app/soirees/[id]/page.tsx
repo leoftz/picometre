@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
-import { SharingControl } from "@/components/sharing-control";
+import { ShareGaugeCheckbox, SharingControl } from "@/components/sharing-control";
 import { Loading, PageShell, buttonClass } from "@/components/ui";
 import type { AvatarId } from "@/lib/account/avatars";
 import { drinkType, glassSize } from "@/lib/bank/catalog";
@@ -80,14 +80,15 @@ async function Content({ params }: Pick<PageProps<"/soirees/[id]">, "params">) {
       {myInvite === "invited" ? (
         <section role="status" className="flex flex-col gap-3 rounded-carte border-2 border-citron p-4">
           <p className="font-semibold">{card(party.host_id)?.pseudo ?? "Quelqu'un"} t&apos;invite à cette soirée.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <form action={answerInvitation.bind(null, party.id, true)}>
+          <form action={answerInvitation.bind(null, party.id, true)} className="flex flex-col gap-3">
+            <ShareGaugeCheckbox />
+            <div className="grid grid-cols-2 gap-3">
               <button type="submit" className={buttonClass("primary")}>Accepter</button>
-            </form>
-            <form action={answerInvitation.bind(null, party.id, false)}>
-              <button type="submit" className={buttonClass("secondary")}>Décliner</button>
-            </form>
-          </div>
+              <button type="submit" formAction={answerInvitation.bind(null, party.id, false)} className={buttonClass("secondary")}>
+                Décliner
+              </button>
+            </div>
+          </form>
         </section>
       ) : party.status === "ended" ? (
         <div className="flex flex-col gap-3">
