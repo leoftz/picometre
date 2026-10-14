@@ -1,7 +1,7 @@
 -- Lot 5: consumptions are frozen at entry and strictly private, even inside a party.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(17);
 
 insert into auth.users (id, email, aud, role) values
   ('00000000-0000-0000-0000-00000000000a', 'a@test.local', 'authenticated', 'authenticated'),
@@ -105,6 +105,13 @@ select is(
 );
 delete from auth.users where id = '00000000-0000-0000-0000-00000000000b';
 select is((select count(*) from public.consumptions where user_id = '00000000-0000-0000-0000-00000000000b')::int, 0, 'account deletion erases consumptions');
+
+-- Live gauge on every device (RLS still decides who receives what).
+reset role;
+select ok(
+  exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'consumptions'),
+  'consumptions are published to Realtime'
+);
 
 select * from finish();
 rollback;

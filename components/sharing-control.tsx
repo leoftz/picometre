@@ -20,3 +20,16 @@ export function SharingControl({ partyId, sharing }: { partyId: string; sharing:
     </div>
   );
 }
+
+/** The same consent, offered while creating or joining a party. Unticked by default. */
+export function ShareGaugeCheckbox() {
+  return (
+    <label className="flex items-start gap-3 rounded-carte bg-white/5 p-4">
+      <input type="checkbox" name="shareGauge" className="mt-1 size-5 shrink-0 accent-corail" />
+      <span>
+        <span className="block font-semibold">Partager ma jauge avec le groupe</span>
+        <span className="block text-sm text-on-surface-muted">{CONSENT_TEXTS.gauge_sharing}</span>
+      </span>
+    </label>
+  );
+}

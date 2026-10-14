@@ -57,3 +57,23 @@ test("record a drink in 2 taps and see the estimated gauge with its range", asyn
     await expect(page.getByText("La jauge estime, l'éthylotest décide. Si tu as bu, tu ne conduis pas.")).toBeVisible();
   });
 });
+
+test("a drink entered on another device updates the gauge live, without reloading", async ({ page, context }) => {
+  await createAccount(page);
+  await partyWithIpa(page);
+  await page.getByRole("link", { name: "Ouvrir ma jauge" }).click();
+  await expect(page.getByText("Rien de noté pour l'instant.")).toBeVisible();
+
+  const other = await context.newPage();
+  await other.goto(page.url());
+  await other.getByRole("button", { name: "Bière IPA", exact: true }).click();
+  await other.getByRole("dialog").getByRole("button", { name: /Pinte \(50 cl\)/ }).click();
+  await expect(other.getByRole("listitem").filter({ hasText: "Bière IPA" })).toHaveCount(1);
+
+  await expect(page.getByRole("listitem").filter({ hasText: "Bière IPA" })).toContainText("Pinte (50 cl) · 25,6 g");
+  await expect(page.getByRole("heading", { name: /^À venir : / })).toBeVisible();
+
+  await other.getByRole("listitem").filter({ hasText: "Bière IPA" }).getByRole("button", { name: /^Retirer/ }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "Bière IPA" })).toHaveCount(0);
+  await other.close();
+});

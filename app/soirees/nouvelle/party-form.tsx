@@ -1,13 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
+import { Avatar } from "@/components/avatar";
 import { DateTimeField } from "@/components/datetime-field";
+import { ShareGaugeCheckbox } from "@/components/sharing-control";
 import { Field, buttonClass, inputClass } from "@/components/ui";
+import type { AvatarId } from "@/lib/account/avatars";
 import { type FormState, createParty } from "../actions";
 
 const initial: FormState = { errors: {} };
 
-export function PartyForm({ defaultStart }: { defaultStart: string }) {
+export interface FriendCard {
+  id: string;
+  pseudo: string;
+  avatar: string;
+}
+
+export function PartyForm({ defaultStart, friends }: { defaultStart: string; friends: FriendCard[] }) {
   const [state, formAction, pending] = useActionState(createParty, initial);
   const { errors } = state;
   return (
@@ -21,6 +31,25 @@ export function PartyForm({ defaultStart }: { defaultStart: string }) {
       <Field label="Lieu (facultatif)" htmlFor="location" error={errors.location}>
         <input id="location" name="location" maxLength={80} className={inputClass} />
       </Field>
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-2 font-semibold">Qui vient ?</legend>
+        {friends.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {friends.map((friend) => (
+              <label key={friend.id} className="flex items-center gap-3">
+                <input type="checkbox" name="friend" value={friend.id} className="size-5 accent-corail" />
+                <Avatar id={friend.avatar as AvatarId} size={32} />
+                {friend.pseudo}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-on-surface-muted">
+            Pas encore d&apos;amis sur Picomètre : ajoute-les depuis <Link href="/amis" className="underline">Mes amis</Link>, puis invite-les depuis la page de la soirée.
+          </p>
+        )}
+      </fieldset>
+      <ShareGaugeCheckbox />
       {errors.form ? <p role="alert" className="font-semibold text-corail">{errors.form}</p> : null}
       <button type="submit" className={buttonClass("primary")} disabled={pending}>
         {pending ? "Création…" : "Créer la soirée"}

@@ -14,6 +14,14 @@ export type FormState = { errors: Record<string, string>; ok?: boolean };
 
 const SAVE_FAILED = { errors: { form: "L'enregistrement a échoué. Réessaie." } };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const friendIds = (formData: FormData) => [...new Set(formData.getAll("friend").map(String))].filter((id) => UUID.test(id));
+
+/** Records the per-party consent to share one's gauge level (lot 8); a database trigger turns sharing on. */
+async function grantGaugeSharing(supabase: Awaited<ReturnType<typeof createClient>>, partyId: string) {
+  return supabase.from("consents").insert({ kind: "gauge_sharing", party_id: partyId, version: CONSENT_VERSIONS.gauge_sharing });
+}
+
 export async function createParty(_previous: FormState, formData: FormData): Promise<FormState> {
   await requireUser();
   const parsed = partySchema.safeParse({
@@ -29,6 +37,15 @@ export async function createParty(_previous: FormState, formData: FormData): Pro
     .from("parties")
     .insert({ id, title: parsed.data.title, starts_at: parsed.data.startsAt, location: parsed.data.location });
   if (error) return SAVE_FAILED;
+  // The party exists: invitations (RLS: accepted friends only) and the host's own sharing consent are
+  // best effort, both can be done again from the party page.
+  const friends = friendIds(formData);
+  await Promise.all([
+    friends.length > 0
+      ? supabase.from("party_participants").insert(friends.map((user_id) => ({ party_id: id, user_id })))
+      : null,
+    formData.get("shareGauge") === "on" ? grantGaugeSharing(supabase, id) : null,
+  ]);
   redirect(`/soirees/${id}`);
 }
 
@@ -130,7 +147,7 @@ export async function endParty(partyId: string): Promise<void> {
 /** Host only (RLS: accepted friends only). Invited friends then accept or decline. */
 export async function inviteFriends(partyId: string, formData: FormData): Promise<void> {
   await requireUser();
-  const ids = formData.getAll("friend").map(String).filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+  const ids = friendIds(formData);
   if (ids.length > 0) {
     const supabase = await createClient();
     await supabase.from("party_participants").insert(ids.map((user_id) => ({ party_id: partyId, user_id })));
@@ -138,14 +155,16 @@ export async function inviteFriends(partyId: string, formData: FormData): Promis
   revalidatePath(`/soirees/${partyId}`);
 }
 
-export async function answerInvitation(partyId: string, accept: boolean): Promise<void> {
+/** Accepting may come with the consent to share one's gauge with the group, ticked by the guest. */
+export async function answerInvitation(partyId: string, accept: boolean, formData?: FormData): Promise<void> {
   const user = await requireUser();
   const supabase = await createClient();
-  await supabase
+  const { error } = await supabase
     .from("party_participants")
     .update({ invite_status: accept ? "accepted" : "declined" })
     .eq("party_id", partyId)
     .eq("user_id", user.id);
+  if (!error && accept && formData?.get("shareGauge") === "on") await grantGaugeSharing(supabase, partyId);
   revalidatePath("/accueil");
   redirect(accept ? `/soirees/${partyId}` : "/accueil");
 }
@@ -164,7 +183,7 @@ export async function removeParticipant(partyId: string, userId: string): Promis
 export async function shareGauge(partyId: string): Promise<void> {
   await requireUser();
   const supabase = await createClient();
-  await supabase.from("consents").insert({ kind: "gauge_sharing", party_id: partyId, version: CONSENT_VERSIONS.gauge_sharing });
+  await grantGaugeSharing(supabase, partyId);
   revalidatePath(`/soirees/${partyId}`);
   revalidatePath(`/soirees/${partyId}/jauge`);
 }
